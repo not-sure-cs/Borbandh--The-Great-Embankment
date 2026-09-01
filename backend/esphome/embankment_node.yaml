@@ -1,0 +1,110 @@
+# ESPHome Declarative Firmware Configuration
+# System: AeroHydro AI Embankment Monitoring System
+# Target Microcontroller: ESP32-WROOM-32 (IP68 Weatherproof Embankment Probe)
+
+esphome:
+  name: aerohydro-node-majuli
+  friendly_name: "AeroHydro Embankment Probe (Majuli)"
+  comment: "Brahmaputra River Basin Edge Telemetry Station"
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# WiFi & Over-The-Air (OTA) Wireless Updates
+wifi:
+  ssid: "AeroHydro_Field_AP"
+  password: "EmbankmentSecure2026!"
+  
+  # Fallback AP if connection drops during flood surge
+  ap:
+    ssid: "AeroHydro-Node-01-Fallback"
+    password: "FieldProbeFallback"
+
+ota:
+  - platform: esphome
+    password: "SecureOTAPassword"
+
+logger:
+  level: INFO
+
+# I2C Bus for MPU6050 Motion / Tilt Sensor
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  scan: true
+  id: bus_a
+
+# Sensor Configurations (Phase 2 Specifications)
+sensor:
+  # 1. Soil Moisture (Capacitive Probe on GPIO34 with linear calibration filter)
+  - platform: adc
+    pin: GPIO34
+    name: "Embankment Soil Moisture"
+    id: soil_moisture_sensor
+    update_interval: 5s
+    attenuation: 11db
+    filters:
+      # Calibrate: 3.0V (Dry Soil) -> 0%, 1.2V (Submerged Saturated Soil) -> 100%
+      - calibrate_linear:
+          - 3.0 -> 0.0
+          - 1.2 -> 100.0
+      - sliding_window_moving_average:
+          window_size: 5
+          send_every: 1
+    unit_of_measurement: "%"
+    accuracy_decimals: 1
+
+  # 2. Tilt / Embankment Slump Movement (MPU6050 Accelerometer & Gyroscope)
+  - platform: mpu6050
+    address: 0x68
+    i2c_id: bus_a
+    update_interval: 5s
+    accel_x:
+      name: "Tilt X-Axis"
+      id: mpu_accel_x
+    accel_y:
+      name: "Tilt Y-Axis"
+      id: mpu_accel_y
+    accel_z:
+      name: "Tilt Z-Axis"
+      id: mpu_accel_z
+
+  # 3. Acoustic Piping / Internal Water Flow Vibration (INMP441 Envelope Detector on GPIO35)
+  - platform: adc
+    pin: GPIO35
+    name: "Acoustic Piping RMS Energy"
+    id: acoustic_rms_sensor
+    update_interval: 5s
+    attenuation: 11db
+    filters:
+      - multiply: 300.0 # Scales voltage to RMS vibration energy index (0-1000)
+    unit_of_measurement: "RMS"
+    accuracy_decimals: 1
+
+# HTTP Request Webhook Dispatch to Go Backend (Port 8080)
+http_request:
+  useragent: esphome/aerohydro-node
+  timeout: 10s
+
+interval:
+  - interval: 5min
+    then:
+      - http_request.post:
+          url: "http://<BACKEND_HOST_IP>:8080/api/v1/telemetry/ingest"
+          headers:
+            Content-Type: "application/json"
+          json: |-
+            root["node_id"] = "NODE-MAJULI-01";
+            root["zone_name"] = "Majuli Island - Kamalabari Dyke";
+            root["soil_moisture"] = id(soil_moisture_sensor).state;
+            
+            // Calculate tilt angle in degrees from accelerometer vector
+            float ax = id(mpu_accel_x).state;
+            float ay = id(mpu_accel_y).state;
+            float az = id(mpu_accel_z).state;
+            float tilt = atan2(sqrt(ax*ax + ay*ay), az) * (180.0 / 3.14159265);
+            root["tilt_angle"] = tilt;
+            
+            root["audio_rms"] = id(acoustic_rms_sensor).state;
