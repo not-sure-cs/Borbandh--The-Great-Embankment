@@ -1,4 +1,4 @@
-# AeroHydro AI: Autonomous Embankment Resilience & Early Warning Platform
+# Borbandh: Autonomous Embankment Resilience & Early Warning Platform
 
 An enterprise-grade IoT early-warning and resilience platform designed for river embankments in flood-prone regions (such as Assam's Brahmaputra and Barak basins).
 
