@@ -570,18 +570,65 @@ func (s *Store) GetLatestMacroReading(reachID string) (models.MacroEnvironmental
 }
 
 // GetGeoJSON generates a complete OGC GeoJSON FeatureCollection dynamically containing:
-// 1. Embankment centerlines (LineString)
-// 2. 50-meter spatial safety buffer polygons (Polygon)
+// 1. Embankment centerlines with P_breach & segment risk corridor breakdown (LineString)
+// 2. 50-meter spatial safety buffer polygons with dynamic risk color (Polygon)
 // 3. Historical breach locations (Point)
-func (s *Store) GetGeoJSON() map[string]interface{} {
+// 4. Dynamic hydrodynamic water level inundation polygons for simulated stage rise (Polygon)
+// 5. Low-lying depression entrapment zones (HAND hazard mask) (Polygon)
+func (s *Store) GetGeoJSON(stageDelta ...float64) map[string]interface{} {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	features := make([]map[string]interface{}, 0, len(s.reaches)*2+len(s.breaches))
+	delta := 0.0
+	if len(stageDelta) > 0 {
+		delta = stageDelta[0]
+	}
 
-	// 1. Embankment Centerlines and 2. 50m Spatial Safety Buffer Polygons
+	features := make([]map[string]interface{}, 0, len(s.reaches)*3+len(s.breaches)+12)
+	reachList := make([]models.EmbankmentReach, 0, len(s.reaches))
+
+	// 1. Embankment Centerlines with Segment Risk & Breach Probability
 	for _, r := range s.reaches {
-		// Embankment Line
+		reachList = append(reachList, r)
+
+		var latestTelemetry *models.NodeTelemetry
+		if r.ActiveNodeID != "" {
+			if node, ok := s.nodes[r.ActiveNodeID]; ok && node.LastTelemetry != nil {
+				latestTelemetry = node.LastTelemetry
+			}
+		}
+
+		reading := s.macroReadings[r.ID]
+		segments := calculator.CalculateSegmentBreachProbabilities(r, reading.CWCWaterLevelM, reading.CWCDangerLevelM, reading.WaterLevelRateOfRiseCmH, latestTelemetry)
+
+		// Aggregate reach-level metrics
+		maxPBreach := 0.15
+		avgPBreach := 0.15
+		riskTier := "SAFE"
+		failureMode := "Stable Embankment Core"
+		if len(segments) > 0 {
+			sum := 0.0
+			for _, seg := range segments {
+				sum += seg.PBreach
+				if seg.PBreach > maxPBreach {
+					maxPBreach = seg.PBreach
+					failureMode = seg.FailureMode
+				}
+			}
+			avgPBreach = math.Round((sum/float64(len(segments)))*1000) / 1000
+			if maxPBreach >= 0.70 {
+				riskTier = "CRITICAL"
+			} else if maxPBreach >= 0.35 {
+				riskTier = "WATCH"
+			}
+		}
+
+		freeboard := r.CrestElevation - reading.CWCWaterLevelM
+		if reading.CalculatedFreeboardM > 0 {
+			freeboard = reading.CalculatedFreeboardM
+		}
+
+		// Embankment Centerline Feature
 		features = append(features, map[string]interface{}{
 			"type": "Feature",
 			"properties": map[string]interface{}{
@@ -597,6 +644,12 @@ func (s *Store) GetGeoJSON() map[string]interface{} {
 				"vulnerable":       r.Vulnerability,
 				"active_node":      r.ActiveNodeID,
 				"last_survey_date": r.LastSurveyDate,
+				"p_breach":         maxPBreach,
+				"avg_p_breach":     avgPBreach,
+				"risk_tier":        riskTier,
+				"failure_mode":     failureMode,
+				"freeboard_m":      math.Round(freeboard*100) / 100,
+				"segment_risks":    segments,
 			},
 			"geometry": map[string]interface{}{
 				"type":        "LineString",
@@ -606,6 +659,12 @@ func (s *Store) GetGeoJSON() map[string]interface{} {
 
 		// 50m Spatial Buffer Polygon
 		if len(r.BufferPolygon) > 0 {
+			bufColor := "#10b981"
+			if riskTier == "CRITICAL" {
+				bufColor = "#ef4444"
+			} else if riskTier == "WATCH" {
+				bufColor = "#f59e0b"
+			}
 			features = append(features, map[string]interface{}{
 				"type": "Feature",
 				"properties": map[string]interface{}{
@@ -613,7 +672,9 @@ func (s *Store) GetGeoJSON() map[string]interface{} {
 					"name":        fmt.Sprintf("%s 50m Buffer", r.Name),
 					"type":        "buffer_zone",
 					"buffer_dist": "50 meters",
-					"fillColor":   "#f59e0b",
+					"fillColor":   bufColor,
+					"p_breach":    maxPBreach,
+					"risk_tier":   riskTier,
 				},
 				"geometry": map[string]interface{}{
 					"type":        "Polygon",
@@ -623,7 +684,7 @@ func (s *Store) GetGeoJSON() map[string]interface{} {
 		}
 	}
 
-	// 3. Historical Breach Points
+	// 2. Historical Breach Points
 	for _, b := range s.breaches {
 		features = append(features, map[string]interface{}{
 			"type": "Feature",
@@ -643,6 +704,52 @@ func (s *Store) GetGeoJSON() map[string]interface{} {
 			"geometry": map[string]interface{}{
 				"type":        "Point",
 				"coordinates": []float64{b.Longitude, b.Latitude},
+			},
+		})
+	}
+
+	// 3. Dynamic Hydrodynamic Inundation Polygons (Predictive Water Level Rise)
+	inundationZones := calculator.GenerateInundationPolygons(reachList, delta)
+	for _, z := range inundationZones {
+		fillColor := "#38bdf8"
+		if z.DepthClass == "DEEP" {
+			fillColor = "#1e3a8a"
+		} else if z.DepthClass == "MODERATE" {
+			fillColor = "#0284c7"
+		}
+		features = append(features, map[string]interface{}{
+			"type": "Feature",
+			"properties": map[string]interface{}{
+				"name":          fmt.Sprintf("Inundation Zone (+%.1fm)", z.StageDeltaM),
+				"type":          "inundation_zone",
+				"stage_delta_m": z.StageDeltaM,
+				"depth_class":   z.DepthClass,
+				"depth_m":       z.DepthM,
+				"fillColor":     fillColor,
+			},
+			"geometry": map[string]interface{}{
+				"type":        "Polygon",
+				"coordinates": z.Polygon,
+			},
+		})
+	}
+
+	// 4. HAND Low-Lying Depression Entrapment Zones (Behind Dykes)
+	depressions := calculator.GenerateHANDDepressionPolygons(reachList)
+	for _, d := range depressions {
+		features = append(features, map[string]interface{}{
+			"type": "Feature",
+			"properties": map[string]interface{}{
+				"name":        d.Name,
+				"reach_id":    d.ReachID,
+				"type":        "hand_depression",
+				"hand_m":      d.HANDM,
+				"risk_rating": d.RiskRating,
+				"fillColor":   "#818cf8",
+			},
+			"geometry": map[string]interface{}{
+				"type":        "Polygon",
+				"coordinates": d.Polygon,
 			},
 		})
 	}

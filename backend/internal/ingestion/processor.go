@@ -5,6 +5,7 @@ import (
 	"math"
 	"time"
 
+	"borbandh/backend/internal/calculator"
 	"borbandh/backend/internal/models"
 	"borbandh/backend/internal/store"
 )
@@ -271,3 +272,21 @@ func (e *IngestionEngine) IngestMacroReading(raw models.MacroEnvironmentalReadin
 	e.store.IngestMacroReading(raw)
 	return raw, nil
 }
+
+// --- 5. Predictive Water Level Rise & Breach Probability Overlays ---
+
+// CalculateSegmentBreachProbabilities evaluates 100m-500m segments of an embankment reach.
+func CalculateSegmentBreachProbabilities(reach models.EmbankmentReach, reading models.MacroEnvironmentalReading, telemetry *models.NodeTelemetry) []models.SegmentRisk {
+	return calculator.CalculateSegmentBreachProbabilities(reach, reading.CWCWaterLevelM, reading.CWCDangerLevelM, reading.WaterLevelRateOfRiseCmH, telemetry)
+}
+
+// GenerateInundationPolygons computes dynamic hydrodynamic flood submergence polygons for a given water stage rise.
+func GenerateInundationPolygons(reaches []models.EmbankmentReach, stageDeltaM float64) []models.InundationZone {
+	return calculator.GenerateInundationPolygons(reaches, stageDeltaM)
+}
+
+// GenerateHANDDepressionPolygons locates low-lying retention pockets behind dykes.
+func GenerateHANDDepressionPolygons(reaches []models.EmbankmentReach) []models.HANDDepressionZone {
+	return calculator.GenerateHANDDepressionPolygons(reaches)
+}
+
