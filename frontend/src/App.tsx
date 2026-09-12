@@ -4,7 +4,6 @@ import { SafetyGauge } from './components/SafetyGauge';
 import { TelemetryChart } from './components/TelemetryChart';
 import { NodeStatusGrid } from './components/NodeStatusGrid';
 import { EmbankmentMap } from './components/EmbankmentMap';
-import { ContractorLedger } from './components/ContractorLedger';
 import { CitizenReportForm } from './components/CitizenReportForm';
 import { CitizenReportFeed } from './components/CitizenReportFeed';
 import { EmergencyAlertBanner } from './components/EmergencyAlertBanner';
@@ -13,16 +12,15 @@ import { api, sseClient } from './services/api';
 import { 
   NodeTelemetry, 
   EmbankmentNode, 
-  ContractorLedger as LedgerType, 
   CitizenReport, 
   AlertLog, 
   SystemStats, 
   GeoJSONData 
 } from './types';
-import { Radio, Activity, MapPin, FileSpreadsheet, Users, Cpu, ShieldAlert } from 'lucide-react';
+import { Radio, Activity, MapPin, Users, Cpu, ShieldAlert } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'map' | 'ledger' | 'citizen' | 'simulator'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'map' | 'citizen' | 'simulator'>('dashboard');
   const [showSimModal, setShowSimModal] = useState(false);
   const [connected, setConnected] = useState(false);
 
@@ -31,7 +29,6 @@ export const App: React.FC = () => {
   const [nodes, setNodes] = useState<EmbankmentNode[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string>('NODE-MAJULI-01');
   const [history, setHistory] = useState<NodeTelemetry[]>([]);
-  const [ledger, setLedger] = useState<LedgerType[]>([]);
   const [reports, setReports] = useState<CitizenReport[]>([]);
   const [alerts, setAlerts] = useState<AlertLog[]>([]);
   const [geoData, setGeoData] = useState<GeoJSONData | null>(null);
@@ -39,11 +36,10 @@ export const App: React.FC = () => {
   // Initial Data Fetch
   const loadInitialData = async () => {
     try {
-      const [statsData, nodesData, histData, ledgerData, reportsData, alertsData, geo] = await Promise.all([
+      const [statsData, nodesData, histData, reportsData, alertsData, geo] = await Promise.all([
         api.getStats().catch(() => null),
         api.getNodes().catch(() => []),
         api.getTelemetryHistory().catch(() => []),
-        api.getLedger().catch(() => []),
         api.getCitizenReports().catch(() => []),
         api.getAlerts().catch(() => []),
         api.getGeoJSON().catch(() => null),
@@ -55,7 +51,6 @@ export const App: React.FC = () => {
         if (!selectedNodeId) setSelectedNodeId(nodesData[0].node_id);
       }
       if (histData.length > 0) setHistory(histData);
-      if (ledgerData.length > 0) setLedger(ledgerData);
       if (reportsData.length > 0) setReports(reportsData);
       if (alertsData.length > 0) setAlerts(alertsData);
       if (geo) setGeoData(geo);
@@ -91,11 +86,6 @@ export const App: React.FC = () => {
 
     sseClient.on('alert', (alt: AlertLog) => {
       setAlerts((prev) => [alt, ...prev.slice(0, 100)]);
-    });
-
-    sseClient.on('ledger', (entry: LedgerType) => {
-      setLedger((prev) => [...prev, entry]);
-      api.getStats().then(setStats).catch(() => {});
     });
 
     sseClient.on('report', (rep: CitizenReport) => {
@@ -194,13 +184,6 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'ledger' && (
-          <ContractorLedger
-            ledger={ledger}
-            onRefresh={loadInitialData}
-          />
-        )}
-
         {activeTab === 'citizen' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-6">
@@ -247,7 +230,7 @@ export const App: React.FC = () => {
       {/* Footer */}
       <footer className="border-t border-slate-900 bg-slate-950/80 py-6 text-center text-xs text-slate-500 font-mono">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>AeroHydro AI • Assam State Embankment Protection Network</span>
+          <span>BorBandh AI • Assam State Embankment Protection Network</span>
           <span>100% Vanilla Go Standard Library Backend + React TypeScript Frontend</span>
         </div>
       </footer>

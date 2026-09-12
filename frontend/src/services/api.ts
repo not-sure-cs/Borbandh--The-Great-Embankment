@@ -1,7 +1,6 @@
 import { 
   NodeTelemetry, 
   EmbankmentNode, 
-  ContractorLedger, 
   CitizenReport, 
   AlertLog, 
   SystemStats,
@@ -51,22 +50,6 @@ export const api = {
       body: JSON.stringify(payload)
     });
     if (!res.ok) throw new Error('Failed to ingest telemetry');
-    return res.json();
-  },
-
-  async getLedger(): Promise<ContractorLedger[]> {
-    const res = await fetch(`${API_BASE}/ledger`);
-    if (!res.ok) throw new Error('Failed to fetch ledger');
-    return res.json();
-  },
-
-  async addLedgerEntry(entry: Partial<ContractorLedger>): Promise<ContractorLedger> {
-    const res = await fetch(`${API_BASE}/ledger`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(entry)
-    });
-    if (!res.ok) throw new Error('Failed to create ledger record');
     return res.json();
   },
 
@@ -138,7 +121,7 @@ export class SSEClient {
     };
 
     // Register event listeners
-    const eventTypes = ['telemetry', 'alert', 'ledger', 'report', 'connected'];
+    const eventTypes = ['telemetry', 'alert', 'breach', 'report', 'connected'];
     eventTypes.forEach(type => {
       this.eventSource?.addEventListener(type, (e: MessageEvent) => {
         try {

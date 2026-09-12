@@ -5,7 +5,6 @@ import {
   ShieldCheck, 
   AlertTriangle, 
   Radio, 
-  FileSpreadsheet, 
   Users, 
   Cpu, 
   MapPin, 
@@ -16,8 +15,8 @@ import { SystemStats } from '../types';
 interface HeaderProps {
   stats: SystemStats | null;
   connected: boolean;
-  activeTab: 'dashboard' | 'map' | 'ledger' | 'citizen' | 'simulator';
-  onSelectTab: (tab: 'dashboard' | 'map' | 'ledger' | 'citizen' | 'simulator') => void;
+  activeTab: 'dashboard' | 'map' | 'citizen' | 'simulator';
+  onSelectTab: (tab: 'dashboard' | 'map' | 'citizen' | 'simulator') => void;
   onOpenSimModal: () => void;
 }
 
@@ -59,7 +58,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div>
               <div className="flex items-center space-x-2">
                 <span className="font-bold text-lg tracking-tight text-white flex items-center gap-1.5">
-                  Aero<span className="text-cyan-400">Hydro</span> AI
+                  Bor<span className="text-cyan-400">Bandh</span> AI
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider bg-cyan-950 text-cyan-300 border border-cyan-800">
                   Assam Basin
@@ -145,18 +144,6 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <MapPin className="w-4 h-4" />
             <span>GIS Map & Satellites</span>
-          </button>
-
-          <button
-            onClick={() => onSelectTab('ledger')}
-            className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg transition-colors whitespace-nowrap ${
-              activeTab === 'ledger'
-                ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-            }`}
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>Contractor Ledger</span>
           </button>
 
           <button

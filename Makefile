@@ -3,7 +3,7 @@
 all: build-backend build-frontend
 
 help:
-	@echo "AeroHydro AI Embankment Monitoring System Commands:"
+	@echo "BorBandh AI Embankment Monitoring System Commands:"
 	@echo "  make run-backend    - Start Vanilla Go backend server on port 8080"
 	@echo "  make run-frontend   - Start React Vite frontend dev server on port 5173"
 	@echo "  make test           - Run all Go unit tests"

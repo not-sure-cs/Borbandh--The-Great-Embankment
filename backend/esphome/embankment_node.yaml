@@ -1,10 +1,10 @@
 # ESPHome Declarative Firmware Configuration
-# System: AeroHydro AI Embankment Monitoring System
+# System: BorBandh AI Embankment Monitoring System
 # Target Microcontroller: ESP32-WROOM-32 (IP68 Weatherproof Embankment Probe)
 
 esphome:
-  name: aerohydro-node-majuli
-  friendly_name: "AeroHydro Embankment Probe (Majuli)"
+  name: borbandh-node-majuli
+  friendly_name: "BorBandh Embankment Probe (Majuli)"
   comment: "Brahmaputra River Basin Edge Telemetry Station"
 
 esp32:
@@ -14,12 +14,12 @@ esp32:
 
 # WiFi & Over-The-Air (OTA) Wireless Updates
 wifi:
-  ssid: "AeroHydro_Field_AP"
+  ssid: "BorBandh_Field_AP"
   password: "EmbankmentSecure2026!"
   
   # Fallback AP if connection drops during flood surge
   ap:
-    ssid: "AeroHydro-Node-01-Fallback"
+    ssid: "BorBandh-Node-01-Fallback"
     password: "FieldProbeFallback"
 
 ota:
@@ -85,7 +85,7 @@ sensor:
 
 # HTTP Request Webhook Dispatch to Go Backend (Port 8080)
 http_request:
-  useragent: esphome/aerohydro-node
+  useragent: esphome/borbandh-node
   timeout: 10s
 
 interval:

@@ -100,6 +100,43 @@ export const EmbankmentMap: React.FC<EmbankmentMapProps> = ({
             </div>
           `);
           group.addLayer(line);
+        } else if (feature.properties.type === 'breach_location') {
+          // Historical / Field Breach Point
+          const coords = feature.geometry.coordinates as [number, number];
+          const breachLng = coords[0];
+          const breachLat = coords[1];
+          const breachIcon = L.divIcon({
+            className: 'custom-breach-pin',
+            html: `
+              <div style="
+                width: 20px;
+                height: 20px;
+                background-color: #ef4444;
+                border: 2px solid #ffffff;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 0 12px #ef4444;
+              ">
+                <span style="width: 6px; height: 6px; background-color: #ffffff; border-radius: 50%;"></span>
+              </div>
+            `,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+          });
+          const marker = L.marker([breachLat, breachLng], { icon: breachIcon });
+          marker.bindPopup(`
+            <div style="font-family: sans-serif; color: #0f172a; padding: 4px; min-width: 180px;">
+              <h4 style="margin: 0 0 4px 0; font-weight: bold; color: #ef4444;">${feature.properties.name}</h4>
+              <p style="margin: 0; font-size: 11px;">River: <b>${feature.properties.river}</b></p>
+              <p style="margin: 0; font-size: 11px;">Date: <b>${feature.properties.breach_date ?? 'Historical'}</b></p>
+              <p style="margin: 0; font-size: 11px;">Breach Width: <b>${feature.properties.breach_width_m ?? 'N/A'} m</b></p>
+              <p style="margin: 0; font-size: 11px;">Failure Mechanism: <b>${feature.properties.failure_mechanism ?? 'Overtopping / Piping'}</b></p>
+              <p style="margin: 0; font-size: 11px;">Status: <b>${feature.properties.remediation_status ?? 'UNDER_MONITORING'}</b></p>
+            </div>
+          `);
+          group.addLayer(marker);
         }
       });
     }
@@ -234,6 +271,9 @@ export const EmbankmentMap: React.FC<EmbankmentMapProps> = ({
           </div>
           <div className="flex items-center gap-2 text-rose-400">
             <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span> IoT Node (Critical Alert)
+          </div>
+          <div className="flex items-center gap-2 text-rose-300">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-600 border border-white"></span> Historical Breach Site
           </div>
         </div>
       </div>

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"aero_hydro/backend/internal/models"
-	"aero_hydro/backend/internal/store"
+	"borbandh/backend/internal/models"
+	"borbandh/backend/internal/store"
 )
 
 // Dispatcher handles routing critical evacuation notices when Factor of Safety < 1.0.

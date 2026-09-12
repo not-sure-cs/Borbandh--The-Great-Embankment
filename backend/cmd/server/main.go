@@ -10,12 +10,13 @@ import (
 	"syscall"
 	"time"
 
-	"aero_hydro/backend/internal/alerting"
-	"aero_hydro/backend/internal/handlers"
-	"aero_hydro/backend/internal/middleware"
-	"aero_hydro/backend/internal/simulator"
-	"aero_hydro/backend/internal/sse"
-	"aero_hydro/backend/internal/store"
+	"borbandh/backend/internal/alerting"
+	"borbandh/backend/internal/handlers"
+	"borbandh/backend/internal/ingestion"
+	"borbandh/backend/internal/middleware"
+	"borbandh/backend/internal/simulator"
+	"borbandh/backend/internal/sse"
+	"borbandh/backend/internal/store"
 )
 
 func main() {
@@ -25,7 +26,7 @@ func main() {
 	}
 
 	log.Println("==================================================================")
-	log.Println("   AeroHydro AI Embankment Monitoring System - Go Backend")
+	log.Println("   BorBandh AI Embankment Monitoring System - Go Backend")
 	log.Println("   Architecture: 100% Vanilla Go Standard Library (Zero Frameworks)")
 	log.Println("==================================================================")
 
@@ -38,7 +39,12 @@ func main() {
 	// 3. Initialize Standard Library SSE Real-Time Stream Broker
 	broker := sse.NewBroker()
 
-	// 4. Initialize Background IoT Telemetry Simulator
+	// 4. Initialize Data Ingestion Engine & Outbound API Data Collector
+	ingestEngine := ingestion.NewIngestionEngine(st)
+	collector := ingestion.NewDataCollector(ingestEngine, st)
+	collector.Start(context.Background())
+
+	// 5. Initialize Background IoT Telemetry Simulator
 	sim := simulator.NewSimulator(st, disp, broker)
 	sim.Start()
 
@@ -76,6 +82,7 @@ func main() {
 	log.Printf("[SHUTDOWN] Received signal %v. Initiating graceful shutdown...", sig)
 
 	sim.Stop()
+	collector.Stop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -83,7 +90,7 @@ func main() {
 	if err := server.Shutdown(ctx); err != nil {
 		log.Printf("[SHUTDOWN ERROR] Force closed: %v", err)
 	} else {
-		log.Println("[SHUTDOWN] AeroHydro Backend stopped gracefully.")
+		log.Println("[SHUTDOWN] BorBandh Backend stopped gracefully.")
 	}
 	fmt.Println("Server terminated cleanly.")
 }

@@ -26,20 +26,57 @@ type TelemetryIngestPayload struct {
 	AudioRMS     float64 `json:"audio_rms"`
 }
 
-// ContractorLedger represents an immutable audit record of embankment infrastructure works.
-type ContractorLedger struct {
-	ID               string    `json:"id"`
-	Index            int       `json:"index"`
-	Constituency     string    `json:"constituency"`
-	ContractorName   string    `json:"contractor_name"`
-	AllocatedBudget  float64   `json:"allocated_budget"` // In Lakhs INR
-	CompletionDate   string    `json:"completion_date"`
-	EmbankmentSector string    `json:"embankment_sector"`
-	IntegrityScore   float64   `json:"integrity_score"` // 0 - 100%
-	Status           string    `json:"status"`          // VERIFIED, UNDER_REVIEW, BREACH_AUDIT
-	PrevHash         string    `json:"prev_hash"`
-	HashSignature    string    `json:"hash_signature"` // SHA-256 block hash
-	Timestamp        time.Time `json:"timestamp"`
+// EmbankmentReach represents a physical or segmented reach of an embankment.
+type EmbankmentReach struct {
+	ID             string        `json:"id"`
+	Name           string        `json:"name"`
+	River          string        `json:"river"`
+	District       string        `json:"district"`
+	LengthKm       float64       `json:"length_km"`
+	CrestElevation float64       `json:"crest_elevation_m"`
+	BaseWidthM     float64       `json:"base_width_m"`
+	EmbankmentType string        `json:"embankment_type"` // Earthen Bund, Boulder Pitched, Geo-Tube, Concrete Parapet
+	Vulnerability  bool          `json:"vulnerability"`
+	ActiveNodeID   string        `json:"active_node_id,omitempty"`
+	Coordinates    [][]float64   `json:"coordinates"`    // [[lng, lat], ...]
+	BufferPolygon  [][][]float64 `json:"buffer_polygon"` // [[[lng, lat], ...]]
+	LastSurveyDate string        `json:"last_survey_date"`
+}
+
+// BreachRecord represents a documented historical failure or field-reported breach incident.
+type BreachRecord struct {
+	ID                string  `json:"id"`
+	ReachID           string  `json:"reach_id"`
+	LocationName      string  `json:"location_name"`
+	River             string  `json:"river"`
+	Latitude          float64 `json:"latitude"`
+	Longitude         float64 `json:"longitude"`
+	BreachDate        string  `json:"breach_date"`
+	BreachWidthM      float64 `json:"breach_width_m"`
+	PeakDischargeM3s  float64 `json:"peak_discharge_m3s"`
+	FailureMechanism  string  `json:"failure_mechanism"` // Piping & Seepage, Crest Overtopping, Toe Scour & Bank Slump
+	ImpactDescription string  `json:"impact_description"`
+	RemediationStatus string  `json:"remediation_status"` // REINFORCED, RECONSTRUCTED_GEO_TUBES, UNDER_MONITORING
+	Severity          string  `json:"severity"`           // MODERATE, SEVERE, CATASTROPHIC
+}
+
+// MacroEnvironmentalReading contains ingested hydrometeorological and satellite indices.
+type MacroEnvironmentalReading struct {
+	ReachID                 string    `json:"reach_id"`
+	Timestamp               time.Time `json:"timestamp"`
+	SARBackscatterDB        float64   `json:"sar_backscatter_db"`       // Sentinel-1 σ0 VV (dB)
+	SARWaterDetected        bool      `json:"sar_water_detected"`       // Flagged when σ0 < -14.0 dB
+	OpticalMNDWI            float64   `json:"optical_mndwi"`            // Sentinel-2 MNDWI (-1.0 to 1.0)
+	OpticalNDVI             float64   `json:"optical_ndvi"`             // Sentinel-2 NDVI (0.0 to 1.0)
+	DEMSlopeDeg             float64   `json:"dem_slope_deg"`            // Copernicus DEM Slope
+	DEMElevationHAND        float64   `json:"dem_elevation_hand"`       // Height Above Nearest Drainage (m)
+	Rainfall72hMm           float64   `json:"rainfall_72h_mm"`          // NASA GPM IMERG 72h precipitation
+	AntecedentPrecipIndex   float64   `json:"antecedent_precip_index"`  // Accumulated API index
+	CWCWaterLevelM          float64   `json:"cwc_water_level_m"`        // Central Water Commission stage (CWL)
+	CWCDangerLevelM         float64   `json:"cwc_danger_level_m"`       // CWC Danger Level (DL)
+	CalculatedFreeboardM    float64   `json:"calculated_freeboard_m"`   // Embankment Crest - CWL
+	WaterLevelRateOfRiseCmH float64   `json:"water_rate_of_rise_cm_h"`  // Δh/Δt in cm/hour
+	HydraulicWarning        bool      `json:"hydraulic_warning"`        // Overtopping hazard or Freeboard < 0.5m
 }
 
 // CitizenReport represents a crowdsourced visual crack/seepage report with GPS evidence.
@@ -98,8 +135,10 @@ type SystemStats struct {
 	CriticalCount     int       `json:"critical_count"`
 	MinFactorOfSafety float64   `json:"min_factor_of_safety"`
 	AvgFactorOfSafety float64   `json:"avg_factor_of_safety"`
-	TotalAlertsSent   int       `json:"total_alerts_sent"`
-	TotalReports      int       `json:"total_reports"`
-	TotalLedgerBudget float64   `json:"total_ledger_budget"`
-	ServerTime        time.Time `json:"server_time"`
+	TotalAlertsSent       int       `json:"total_alerts_sent"`
+	TotalReports          int       `json:"total_reports"`
+	TotalMonitoredKm      float64   `json:"total_monitored_km"`
+	TotalReaches          int       `json:"total_reaches"`
+	HistoricalBreachCount int       `json:"historical_breach_count"`
+	ServerTime            time.Time `json:"server_time"`
 }

@@ -23,19 +23,54 @@ export interface EmbankmentNode {
   last_telemetry?: NodeTelemetry;
 }
 
-export interface ContractorLedger {
+export interface EmbankmentReach {
   id: string;
-  index: number;
-  constituency: string;
-  contractor_name: string;
-  allocated_budget: number; // Lakhs INR
-  completion_date: string;
-  embankment_sector: string;
-  integrity_score: number;
-  status: 'VERIFIED' | 'UNDER_REVIEW' | 'BREACH_AUDIT';
-  prev_hash: string;
-  hash_signature: string;
+  name: string;
+  river: string;
+  district: string;
+  length_km: number;
+  crest_elevation_m: number;
+  base_width_m: number;
+  embankment_type: string;
+  vulnerability: boolean;
+  active_node_id?: string;
+  coordinates: [number, number][];
+  buffer_polygon?: [number, number][][];
+  last_survey_date: string;
+}
+
+export interface BreachRecord {
+  id: string;
+  reach_id: string;
+  location_name: string;
+  river: string;
+  latitude: number;
+  longitude: number;
+  breach_date: string;
+  breach_width_m: number;
+  peak_discharge_m3s: number;
+  failure_mechanism: string;
+  impact_description: string;
+  remediation_status: string;
+  severity: 'MODERATE' | 'SEVERE' | 'CATASTROPHIC';
+}
+
+export interface MacroEnvironmentalReading {
+  reach_id: string;
   timestamp: string;
+  sar_backscatter_db: number;
+  sar_water_detected: boolean;
+  optical_mndwi: number;
+  optical_ndvi: number;
+  dem_slope_deg: number;
+  dem_elevation_hand: number;
+  rainfall_72h_mm: number;
+  antecedent_precip_index: number;
+  cwc_water_level_m: number;
+  cwc_danger_level_m: number;
+  calculated_freeboard_m: number;
+  water_rate_of_rise_cm_h: number;
+  hydraulic_warning: boolean;
 }
 
 export interface CitizenReport {
@@ -73,7 +108,9 @@ export interface SystemStats {
   avg_factor_of_safety: number;
   total_alerts_sent: number;
   total_reports: number;
-  total_ledger_budget: number;
+  total_monitored_km?: number;
+  total_reaches?: number;
+  historical_breach_count?: number;
   server_time: string;
 }
 
@@ -81,16 +118,26 @@ export interface GeoFeature {
   type: 'Feature';
   properties: {
     name: string;
+    reach_id?: string;
     river?: string;
-    type: 'embankment_line' | 'buffer_zone';
+    district?: string;
+    type: 'embankment_line' | 'buffer_zone' | 'breach_location';
     length_km?: number;
+    crest_elevation?: number;
     vulnerable?: boolean;
     active_node?: string;
     buffer_dist?: string;
     fillColor?: string;
+    breach_id?: string;
+    breach_date?: string;
+    breach_width_m?: number;
+    peak_discharge_m3s?: number;
+    failure_mechanism?: string;
+    remediation_status?: string;
+    severity?: string;
   };
   geometry: {
-    type: 'LineString' | 'Polygon';
+    type: 'LineString' | 'Polygon' | 'Point';
     coordinates: any;
   };
 }

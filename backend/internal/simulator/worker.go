@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"aero_hydro/backend/internal/alerting"
-	"aero_hydro/backend/internal/calculator"
-	"aero_hydro/backend/internal/models"
-	"aero_hydro/backend/internal/sse"
-	"aero_hydro/backend/internal/store"
+	"borbandh/backend/internal/alerting"
+	"borbandh/backend/internal/calculator"
+	"borbandh/backend/internal/models"
+	"borbandh/backend/internal/sse"
+	"borbandh/backend/internal/store"
 )
 
 // Simulator simulates real-world IoT telemetry for edge nodes.

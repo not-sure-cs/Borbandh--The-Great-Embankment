@@ -1,41 +1,44 @@
 package store
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
+	"math"
 	"math/rand"
 	"sync"
 	"time"
 
-	"aero_hydro/backend/internal/calculator"
-	"aero_hydro/backend/internal/models"
+	"borbandh/backend/internal/calculator"
+	"borbandh/backend/internal/models"
 )
 
 // Store provides a thread-safe in-memory persistent data store using only the Go standard library.
 type Store struct {
-	mu           sync.RWMutex
-	telemetry    []models.NodeTelemetry
-	nodes        map[string]models.EmbankmentNode
-	ledger       []models.ContractorLedger
-	reports      []models.CitizenReport
-	alerts       []models.AlertLog
-	maxTelemetry int
+	mu            sync.RWMutex
+	telemetry     []models.NodeTelemetry
+	nodes         map[string]models.EmbankmentNode
+	reaches       map[string]models.EmbankmentReach
+	breaches      []models.BreachRecord
+	macroReadings map[string]models.MacroEnvironmentalReading
+	reports       []models.CitizenReport
+	alerts        []models.AlertLog
+	maxTelemetry  int
 }
 
 // NewStore initializes the repository with default Assam embankment demonstration data.
 func NewStore() *Store {
 	s := &Store{
-		telemetry:    make([]models.NodeTelemetry, 0, 1000),
-		nodes:        make(map[string]models.EmbankmentNode),
-		ledger:       make([]models.ContractorLedger, 0),
-		reports:      make([]models.CitizenReport, 0),
-		alerts:       make([]models.AlertLog, 0),
-		maxTelemetry: 2000,
+		telemetry:     make([]models.NodeTelemetry, 0, 1000),
+		nodes:         make(map[string]models.EmbankmentNode),
+		reaches:       make(map[string]models.EmbankmentReach),
+		breaches:      make([]models.BreachRecord, 0),
+		macroReadings: make(map[string]models.MacroEnvironmentalReading),
+		reports:       make([]models.CitizenReport, 0),
+		alerts:        make([]models.AlertLog, 0),
+		maxTelemetry:  2000,
 	}
 
 	s.seedNodes()
-	s.seedLedger()
+	s.seedStructuralData()
 	s.seedCitizenReports()
 	s.seedInitialTelemetry()
 
@@ -52,7 +55,7 @@ func (s *Store) seedNodes() {
 			Longitude:      94.1873,
 			ElevationM:     84.5,
 			BatteryVoltage: 4.12,
-			FirmwareVer:    "ESPHome-AeroHydro-v1.4.2",
+			FirmwareVer:    "ESPHome-BorBandh-v1.4.2",
 			LastSeen:       time.Now(),
 		},
 		{
@@ -63,7 +66,7 @@ func (s *Store) seedNodes() {
 			Longitude:      94.9120,
 			ElevationM:     108.0,
 			BatteryVoltage: 4.05,
-			FirmwareVer:    "ESPHome-AeroHydro-v1.4.2",
+			FirmwareVer:    "ESPHome-BorBandh-v1.4.2",
 			LastSeen:       time.Now(),
 		},
 		{
@@ -74,7 +77,7 @@ func (s *Store) seedNodes() {
 			Longitude:      92.7926,
 			ElevationM:     68.2,
 			BatteryVoltage: 3.98,
-			FirmwareVer:    "ESPHome-AeroHydro-v1.4.2",
+			FirmwareVer:    "ESPHome-BorBandh-v1.4.2",
 			LastSeen:       time.Now(),
 		},
 		{
@@ -85,7 +88,7 @@ func (s *Store) seedNodes() {
 			Longitude:      91.6854,
 			ElevationM:     54.0,
 			BatteryVoltage: 4.18,
-			FirmwareVer:    "ESPHome-AeroHydro-v1.4.2",
+			FirmwareVer:    "ESPHome-BorBandh-v1.4.2",
 			LastSeen:       time.Now(),
 		},
 		{
@@ -96,7 +99,7 @@ func (s *Store) seedNodes() {
 			Longitude:      92.7789,
 			ElevationM:     25.1,
 			BatteryVoltage: 3.89,
-			FirmwareVer:    "ESPHome-AeroHydro-v1.4.2",
+			FirmwareVer:    "ESPHome-BorBandh-v1.4.2",
 			LastSeen:       time.Now(),
 		},
 	}
@@ -106,48 +109,241 @@ func (s *Store) seedNodes() {
 	}
 }
 
-func (s *Store) seedLedger() {
-	blocks := []struct {
-		constituency string
-		contractor   string
-		budget       float64
-		completion   string
-		sector       string
-		integrity    float64
-		status       string
-	}{
-		{"Majuli", "Brahmaputra River Infra Ltd", 485.50, "2024-03-15", "Kamalabari Reach 1-4", 96.5, "VERIFIED"},
-		{"Dibrugarh West", "Assam GeoTech Engineering", 620.00, "2023-11-20", "Town Protection Dyke Sec B", 91.2, "VERIFIED"},
-		{"Tezpur", "Eastern Flood Defense Corp", 340.75, "2024-01-10", "Bhomoraguri Approach North", 88.0, "VERIFIED"},
-		{"Jalukbari", "Saraighat Civils & Marine", 295.00, "2023-08-05", "Saraighat Right Bank Berm", 94.0, "VERIFIED"},
-		{"Silchar", "Barak Valley Infrastructure", 510.20, "2024-04-30", "Bethukandi Dykes & Regulators", 79.5, "UNDER_REVIEW"},
+func create50mBuffer(centerline [][]float64) [][][]float64 {
+	if len(centerline) < 2 {
+		return [][][]float64{}
+	}
+	const latOff = 0.000451
+	const lonOff = 0.000502
+	left := make([][]float64, len(centerline))
+	right := make([][]float64, len(centerline))
+
+	for i := 0; i < len(centerline); i++ {
+		var dx, dy float64
+		if i == 0 {
+			dx = centerline[1][0] - centerline[0][0]
+			dy = centerline[1][1] - centerline[0][1]
+		} else if i == len(centerline)-1 {
+			dx = centerline[i][0] - centerline[i-1][0]
+			dy = centerline[i][1] - centerline[i-1][1]
+		} else {
+			dx = centerline[i+1][0] - centerline[i-1][0]
+			dy = centerline[i+1][1] - centerline[i-1][1]
+		}
+		l := math.Hypot(dx, dy)
+		if l == 0 {
+			l = 0.0001
+		}
+		nx := -dy / l
+		ny := dx / l
+		left[i] = []float64{centerline[i][0] + nx*lonOff, centerline[i][1] + ny*latOff}
+		right[i] = []float64{centerline[i][0] - nx*lonOff, centerline[i][1] - ny*latOff}
 	}
 
-	prevHash := "0000000000000000000000000000000000000000000000000000000000000000"
-	for idx, b := range blocks {
-		now := time.Now().Add(-time.Duration(len(blocks)-idx) * 24 * 30 * time.Hour)
-		recordID := fmt.Sprintf("LEDGER-ASSAM-2024-%03d", idx+1)
-		
-		dataToHash := fmt.Sprintf("%d:%s:%s:%f:%s:%s", idx+1, b.constituency, b.contractor, b.budget, b.completion, prevHash)
-		h := sha256.Sum256([]byte(dataToHash))
-		currHash := hex.EncodeToString(h[:])
+	ring := make([][]float64, 0, len(left)+len(right)+1)
+	ring = append(ring, left...)
+	for i := len(right) - 1; i >= 0; i-- {
+		ring = append(ring, right[i])
+	}
+	ring = append(ring, []float64{left[0][0], left[0][1]})
+	return [][][]float64{ring}
+}
 
-		entry := models.ContractorLedger{
-			ID:               recordID,
-			Index:            idx + 1,
-			Constituency:     b.constituency,
-			ContractorName:   b.contractor,
-			AllocatedBudget:  b.budget,
-			CompletionDate:   b.completion,
-			EmbankmentSector: b.sector,
-			IntegrityScore:   b.integrity,
-			Status:           b.status,
-			PrevHash:         prevHash,
-			HashSignature:    currHash,
-			Timestamp:        now,
-		}
-		s.ledger = append(s.ledger, entry)
-		prevHash = currHash
+func (s *Store) seedStructuralData() {
+	defaultReaches := []models.EmbankmentReach{
+		{
+			ID:             "REACH-MAJULI-01",
+			Name:           "Majuli Kamalabari Reach",
+			River:          "Brahmaputra",
+			District:       "Majuli",
+			LengthKm:       18.4,
+			CrestElevation: 86.5,
+			BaseWidthM:     22.0,
+			EmbankmentType: "Earthen Bund with Boulder Pitching & Porcupines",
+			Vulnerability:  true,
+			ActiveNodeID:   "NODE-MAJULI-01",
+			Coordinates: [][]float64{
+				{94.1500, 26.9300},
+				{94.1700, 26.9400},
+				{94.1873, 26.9452},
+				{94.2100, 26.9550},
+				{94.2400, 26.9600},
+			},
+			LastSurveyDate: "2026-04-12",
+		},
+		{
+			ID:             "REACH-DIBRUGARH-02",
+			Name:           "Dibrugarh Town Protection Dyke",
+			River:          "Brahmaputra",
+			District:       "Dibrugarh",
+			LengthKm:       9.6,
+			CrestElevation: 110.0,
+			BaseWidthM:     28.0,
+			EmbankmentType: "Reinforced Concrete Sluice & Boulder Apron",
+			Vulnerability:  false,
+			ActiveNodeID:   "NODE-DIBRUGARH-02",
+			Coordinates: [][]float64{
+				{94.8800, 27.4550},
+				{94.8950, 27.4650},
+				{94.9120, 27.4728},
+				{94.9300, 27.4800},
+			},
+			LastSurveyDate: "2026-03-20",
+		},
+		{
+			ID:             "REACH-TEZPUR-03",
+			Name:           "Tezpur Bhomoraguri Guide Bund",
+			River:          "Brahmaputra",
+			District:       "Sonitpur",
+			LengthKm:       6.2,
+			CrestElevation: 71.5,
+			BaseWidthM:     20.0,
+			EmbankmentType: "Earthen Bund with Stone Pitching",
+			Vulnerability:  false,
+			ActiveNodeID:   "NODE-TEZPUR-03",
+			Coordinates: [][]float64{
+				{92.7750, 26.6200},
+				{92.7926, 26.6338},
+				{92.8100, 26.6450},
+			},
+			LastSurveyDate: "2026-01-15",
+		},
+		{
+			ID:             "REACH-GUWAHATI-04",
+			Name:           "Guwahati Saraighat Flood Defense",
+			River:          "Brahmaputra",
+			District:       "Kamrup Metropolitan",
+			LengthKm:       5.8,
+			CrestElevation: 56.5,
+			BaseWidthM:     18.0,
+			EmbankmentType: "Concrete Flood Wall & Sheet Piling",
+			Vulnerability:  false,
+			ActiveNodeID:   "NODE-GUWAHATI-04",
+			Coordinates: [][]float64{
+				{91.6650, 26.1650},
+				{91.6854, 26.1738},
+				{91.7050, 26.1800},
+			},
+			LastSurveyDate: "2026-02-10",
+		},
+		{
+			ID:             "REACH-SILCHAR-05",
+			Name:           "Silchar Bethukandi Dyke",
+			River:          "Barak",
+			District:       "Cachar",
+			LengthKm:       12.1,
+			CrestElevation: 27.2,
+			BaseWidthM:     16.0,
+			EmbankmentType: "Earthen Dyke & Sluice Gate Regulator",
+			Vulnerability:  true,
+			ActiveNodeID:   "NODE-SILCHAR-05",
+			Coordinates: [][]float64{
+				{92.7550, 24.8150},
+				{92.7789, 24.8333},
+				{92.8050, 24.8450},
+			},
+			LastSurveyDate: "2026-05-01",
+		},
+		{
+			ID:             "REACH-MATMORA-06",
+			Name:           "Matmora Mega Geo-Tube Dyke",
+			River:          "Brahmaputra / Subansiri",
+			District:       "Lakhimpur",
+			LengthKm:       5.0,
+			CrestElevation: 92.0,
+			BaseWidthM:     30.0,
+			EmbankmentType: "Multi-Tiered Geo-Textile Tubes with Sand Infill",
+			Vulnerability:  false,
+			Coordinates: [][]float64{
+				{94.4800, 27.1200},
+				{94.5100, 27.1400},
+				{94.5350, 27.1650},
+			},
+			LastSurveyDate: "2026-03-05",
+		},
+	}
+
+	for _, r := range defaultReaches {
+		r.BufferPolygon = create50mBuffer(r.Coordinates)
+		s.reaches[r.ID] = r
+	}
+
+	s.breaches = []models.BreachRecord{
+		{
+			ID:                "BREACH-2022-SILCHAR",
+			ReachID:           "REACH-SILCHAR-05",
+			LocationName:      "Bethukandi Sluice Dyke, Barak River",
+			River:             "Barak",
+			Latitude:          24.8280,
+			Longitude:         92.7710,
+			BreachDate:        "2022-06-19",
+			BreachWidthM:      85.0,
+			PeakDischargeM3s:  1250.0,
+			FailureMechanism:  "Seepage Piping & Sluice Embankment Cut",
+			ImpactDescription: "Inundated 80% of Silchar municipality for 11 days; catastrophic breach event.",
+			RemediationStatus: "REINFORCED",
+			Severity:          "CATASTROPHIC",
+		},
+		{
+			ID:                "BREACH-2008-MATMORA",
+			ReachID:           "REACH-MATMORA-06",
+			LocationName:      "Matmora Embankment Reach, Dhakuakhana",
+			River:             "Brahmaputra",
+			Latitude:          27.1350,
+			Longitude:         94.5050,
+			BreachDate:        "2008-07-14",
+			BreachWidthM:      320.0,
+			PeakDischargeM3s:  4800.0,
+			FailureMechanism:  "Overtopping & Severe Toe Scour",
+			ImpactDescription: "Severe flooding across Lakhimpur & Dhemaji districts; prompted modern geo-tube reconstruction.",
+			RemediationStatus: "RECONSTRUCTED_GEO_TUBES",
+			Severity:          "CATASTROPHIC",
+		},
+		{
+			ID:                "BREACH-2012-MAJULI",
+			ReachID:           "REACH-MAJULI-01",
+			LocationName:      "Kamalabari Section Spur 3",
+			River:             "Brahmaputra",
+			Latitude:          26.9420,
+			Longitude:         94.1750,
+			BreachDate:        "2012-09-21",
+			BreachWidthM:      110.0,
+			PeakDischargeM3s:  2100.0,
+			FailureMechanism:  "Crest Subsidence & Slumping",
+			ImpactDescription: "Threatened island core monastery infrastructure; emergency boulder pitching deployed.",
+			RemediationStatus: "REINFORCED",
+			Severity:          "SEVERE",
+		},
+		{
+			ID:                "BREACH-2004-TEZPUR",
+			ReachID:           "REACH-TEZPUR-03",
+			LocationName:      "Bhomoraguri Approach North",
+			River:             "Brahmaputra",
+			Latitude:          26.6300,
+			Longitude:         92.7850,
+			BreachDate:        "2004-08-02",
+			BreachWidthM:      45.0,
+			PeakDischargeM3s:  950.0,
+			FailureMechanism:  "Piping & Foundation Boiling",
+			ImpactDescription: "Toe boiling mitigated by reverse sand filter and porcupine spurs.",
+			RemediationStatus: "REINFORCED",
+			Severity:          "MODERATE",
+		},
+		{
+			ID:                "BREACH-2020-DHEMAJI",
+			ReachID:           "REACH-MATMORA-06",
+			LocationName:      "Jiadhal Confluence Flood Bund",
+			River:             "Brahmaputra Basin",
+			Latitude:          27.4200,
+			Longitude:         94.5600,
+			BreachDate:        "2020-05-28",
+			BreachWidthM:      65.0,
+			PeakDischargeM3s:  1100.0,
+			FailureMechanism:  "Heavy Siltation & Sudden Overtopping",
+			ImpactDescription: "Flash river siltation choked channel capacity causing sudden embankment overflow.",
+			RemediationStatus: "UNDER_MONITORING",
+			Severity:          "SEVERE",
+		},
 	}
 }
 
@@ -257,7 +453,7 @@ func (s *Store) AddTelemetry(t models.NodeTelemetry) models.NodeTelemetry {
 			Longitude:      93.5000 + (rand.Float64()-0.5)*2.0,
 			ElevationM:     60.0,
 			BatteryVoltage: 4.10,
-			FirmwareVer:    "ESPHome-AeroHydro-Auto",
+			FirmwareVer:    "ESPHome-BorBandh-Auto",
 			LastSeen:       t.CreatedAt,
 			LastTelemetry:  &t,
 		}
@@ -314,40 +510,147 @@ func (s *Store) GetNodeByID(nodeID string) (models.EmbankmentNode, bool) {
 	return n, ok
 }
 
-// AddContractorLedger creates an immutable blockchain-style audit record with SHA-256 chaining.
-func (s *Store) AddContractorLedger(entry models.ContractorLedger) models.ContractorLedger {
+// IngestReach stores or updates an embankment reach.
+func (s *Store) IngestReach(reach models.EmbankmentReach) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
-	prevHash := "0000000000000000000000000000000000000000000000000000000000000000"
-	index := 1
-	if len(s.ledger) > 0 {
-		last := s.ledger[len(s.ledger)-1]
-		prevHash = last.HashSignature
-		index = last.Index + 1
-	}
-
-	entry.ID = fmt.Sprintf("LEDGER-ASSAM-%d-%03d", time.Now().Year(), index)
-	entry.Index = index
-	entry.PrevHash = prevHash
-	entry.Timestamp = time.Now()
-
-	dataToHash := fmt.Sprintf("%d:%s:%s:%f:%s:%s", entry.Index, entry.Constituency, entry.ContractorName, entry.AllocatedBudget, entry.CompletionDate, prevHash)
-	h := sha256.Sum256([]byte(dataToHash))
-	entry.HashSignature = hex.EncodeToString(h[:])
-
-	s.ledger = append(s.ledger, entry)
-	return entry
+	s.reaches[reach.ID] = reach
 }
 
-// GetLedger returns all contractor audit records.
-func (s *Store) GetLedger() []models.ContractorLedger {
+// GetReaches returns all monitored embankment reaches.
+func (s *Store) GetReaches() []models.EmbankmentReach {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	res := make([]models.ContractorLedger, len(s.ledger))
-	copy(res, s.ledger)
+	res := make([]models.EmbankmentReach, 0, len(s.reaches))
+	for _, r := range s.reaches {
+		res = append(res, r)
+	}
 	return res
+}
+
+// GetReach returns a specific embankment reach by ID.
+func (s *Store) GetReach(id string) (models.EmbankmentReach, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	r, ok := s.reaches[id]
+	return r, ok
+}
+
+// IngestBreach saves a new or historical embankment breach record.
+func (s *Store) IngestBreach(breach models.BreachRecord) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.breaches = append([]models.BreachRecord{breach}, s.breaches...)
+}
+
+// GetBreaches returns all documented historical and field breach records.
+func (s *Store) GetBreaches() []models.BreachRecord {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	res := make([]models.BreachRecord, len(s.breaches))
+	copy(res, s.breaches)
+	return res
+}
+
+// IngestMacroReading saves a multi-source hydrometeorological reading for a reach.
+func (s *Store) IngestMacroReading(reading models.MacroEnvironmentalReading) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.macroReadings[reading.ReachID] = reading
+}
+
+// GetLatestMacroReading retrieves the latest macro reading for a reach.
+func (s *Store) GetLatestMacroReading(reachID string) (models.MacroEnvironmentalReading, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	r, ok := s.macroReadings[reachID]
+	return r, ok
+}
+
+// GetGeoJSON generates a complete OGC GeoJSON FeatureCollection dynamically containing:
+// 1. Embankment centerlines (LineString)
+// 2. 50-meter spatial safety buffer polygons (Polygon)
+// 3. Historical breach locations (Point)
+func (s *Store) GetGeoJSON() map[string]interface{} {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	features := make([]map[string]interface{}, 0, len(s.reaches)*2+len(s.breaches))
+
+	// 1. Embankment Centerlines and 2. 50m Spatial Safety Buffer Polygons
+	for _, r := range s.reaches {
+		// Embankment Line
+		features = append(features, map[string]interface{}{
+			"type": "Feature",
+			"properties": map[string]interface{}{
+				"reach_id":         r.ID,
+				"name":             r.Name,
+				"river":            r.River,
+				"district":         r.District,
+				"type":             "embankment_line",
+				"length_km":        r.LengthKm,
+				"crest_elevation":  r.CrestElevation,
+				"base_width_m":     r.BaseWidthM,
+				"embankment_type":  r.EmbankmentType,
+				"vulnerable":       r.Vulnerability,
+				"active_node":      r.ActiveNodeID,
+				"last_survey_date": r.LastSurveyDate,
+			},
+			"geometry": map[string]interface{}{
+				"type":        "LineString",
+				"coordinates": r.Coordinates,
+			},
+		})
+
+		// 50m Spatial Buffer Polygon
+		if len(r.BufferPolygon) > 0 {
+			features = append(features, map[string]interface{}{
+				"type": "Feature",
+				"properties": map[string]interface{}{
+					"reach_id":    r.ID,
+					"name":        fmt.Sprintf("%s 50m Buffer", r.Name),
+					"type":        "buffer_zone",
+					"buffer_dist": "50 meters",
+					"fillColor":   "#f59e0b",
+				},
+				"geometry": map[string]interface{}{
+					"type":        "Polygon",
+					"coordinates": r.BufferPolygon,
+				},
+			})
+		}
+	}
+
+	// 3. Historical Breach Points
+	for _, b := range s.breaches {
+		features = append(features, map[string]interface{}{
+			"type": "Feature",
+			"properties": map[string]interface{}{
+				"breach_id":          b.ID,
+				"reach_id":           b.ReachID,
+				"name":               b.LocationName,
+				"river":              b.River,
+				"type":               "breach_location",
+				"breach_date":        b.BreachDate,
+				"breach_width_m":     b.BreachWidthM,
+				"peak_discharge_m3s": b.PeakDischargeM3s,
+				"failure_mechanism":  b.FailureMechanism,
+				"remediation_status": b.RemediationStatus,
+				"severity":           b.Severity,
+			},
+			"geometry": map[string]interface{}{
+				"type":        "Point",
+				"coordinates": []float64{b.Longitude, b.Latitude},
+			},
+		})
+	}
+
+	return map[string]interface{}{
+		"type":     "FeatureCollection",
+		"features": features,
+	}
 }
 
 // AddCitizenReport saves a new community report.
@@ -443,9 +746,12 @@ func (s *Store) GetSystemStats() models.SystemStats {
 		stats.AvgFactorOfSafety = sumFs / float64(count)
 	}
 
-	for _, l := range s.ledger {
-		stats.TotalLedgerBudget += l.AllocatedBudget
+	for _, r := range s.reaches {
+		stats.TotalMonitoredKm += r.LengthKm
 	}
+	stats.TotalMonitoredKm = math.Round(stats.TotalMonitoredKm*10) / 10
+	stats.TotalReaches = len(s.reaches)
+	stats.HistoricalBreachCount = len(s.breaches)
 
 	return stats
 }
