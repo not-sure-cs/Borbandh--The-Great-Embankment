@@ -222,6 +222,14 @@ func (h *APIHandler) GetGeoJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	geoJSON := h.store.GetGeoJSON()
+	stageDelta := 0.0
+	if stageParam := r.URL.Query().Get("stage_delta"); stageParam != "" {
+		if val, err := strconv.ParseFloat(stageParam, 64); err == nil {
+			stageDelta = val
+		}
+	}
+
+	geoJSON := h.store.GetGeoJSON(stageDelta)
 	middleware.WriteJSON(w, http.StatusOK, geoJSON)
 }
+

@@ -41,6 +41,36 @@ type EmbankmentReach struct {
 	Coordinates    [][]float64   `json:"coordinates"`    // [[lng, lat], ...]
 	BufferPolygon  [][][]float64 `json:"buffer_polygon"` // [[[lng, lat], ...]]
 	LastSurveyDate string        `json:"last_survey_date"`
+	SegmentRisks   []SegmentRisk `json:"segment_risks,omitempty"`
+}
+
+// SegmentRisk represents granular breach probability and risk attributes for an embankment segment.
+type SegmentRisk struct {
+	SegmentIndex  int         `json:"segment_index"`
+	Coordinates   [][]float64 `json:"coordinates"` // [[lng, lat], [lng, lat]]
+	PBreach       float64     `json:"p_breach"`      // 0.0 to 1.0
+	RiskTier      string      `json:"risk_tier"`     // SAFE, WATCH, CRITICAL
+	FailureMode   string      `json:"failure_mode"`  // Overtopping, Piping & Sand Boiling, Toe Scour & Erosion, Slope Slump
+	FreeboardM    float64     `json:"freeboard_m"`
+	SaturationPct float64     `json:"saturation_pct"`
+}
+
+// InundationZone represents dynamic flood submergence polygons at a given water level stage rise.
+type InundationZone struct {
+	StageDeltaM float64       `json:"stage_delta_m"` // 0.0, 1.5, 3.0, 5.0
+	DepthClass  string        `json:"depth_class"`   // SHALLOW, MODERATE, DEEP
+	DepthM      float64       `json:"depth_m"`
+	Polygon     [][][]float64 `json:"polygon"`       // GeoJSON polygon coordinates [[[lng, lat], ...]]
+}
+
+// HANDDepressionZone represents low-lying backwater entrapment bowls behind dykes (Height Above Nearest Drainage).
+type HANDDepressionZone struct {
+	ID         string        `json:"id"`
+	ReachID    string        `json:"reach_id"`
+	Name       string        `json:"name"`
+	HANDM      float64       `json:"hand_m"`      // Relative elevation difference in meters
+	RiskRating string        `json:"risk_rating"` // HIGH_ENTRAPMENT, MODERATE_PONDING
+	Polygon    [][][]float64 `json:"polygon"`
 }
 
 // BreachRecord represents a documented historical failure or field-reported breach incident.
