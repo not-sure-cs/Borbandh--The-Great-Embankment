@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"sync"
 	"testing"
 	"time"
@@ -119,4 +120,20 @@ func TestStoreConcurrentAccess(t *testing.T) {
 	}
 
 	wg.Wait()
+}
+
+func TestPostgresStore_ConnectionFailure(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	// Invalid connection string
+	_, err := NewPostgresStore(ctx, "postgres://invalid:invalid@localhost:9999/invalid?sslmode=disable")
+	if err == nil {
+		t.Errorf("Expected connection error to non-existent postgres, got nil")
+	}
+}
+
+func TestStoreInterfaceCompliance(t *testing.T) {
+	var _ Store = (*MemoryStore)(nil)
+	var _ Store = (*PostgresStore)(nil)
 }

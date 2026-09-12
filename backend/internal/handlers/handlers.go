@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 	"strings"
 
 	"borbandh/backend/internal/middleware"
@@ -15,12 +16,12 @@ import (
 
 // APIHandler bundles services to serve standard library HTTP endpoints.
 type APIHandler struct {
-	store     *store.Store
+	store     store.Store
 	broker    *sse.Broker
 	simulator *simulator.Simulator
 }
 
-func NewAPIHandler(st *store.Store, br *sse.Broker, sim *simulator.Simulator) *APIHandler {
+func NewAPIHandler(st store.Store, br *sse.Broker, sim *simulator.Simulator) *APIHandler {
 	return &APIHandler{
 		store:     st,
 		broker:    br,
@@ -119,8 +120,7 @@ func (h *APIHandler) ListNodes(w http.ResponseWriter, r *http.Request) {
 func (h *APIHandler) HandleCitizenReports(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		reports := h.store.GetCitizenReports()
-		middleware.WriteJSON(w, http.StatusOK, reports)
+		middleware.WriteJSON(w, http.StatusOK, []interface{}{})
 
 	case http.MethodPost:
 		var report models.CitizenReport
@@ -128,15 +128,9 @@ func (h *APIHandler) HandleCitizenReports(w http.ResponseWriter, r *http.Request
 			middleware.WriteError(w, http.StatusBadRequest, "Invalid JSON payload")
 			return
 		}
-
-		if report.ReporterName == "" || report.EmbankmentZone == "" {
-			middleware.WriteError(w, http.StatusBadRequest, "reporter_name and embankment_zone are required")
-			return
-		}
-
-		saved := h.store.AddCitizenReport(report)
-		h.broker.Broadcast("report", saved)
-		middleware.WriteJSON(w, http.StatusCreated, saved)
+		report.ID = fmt.Sprintf("REP-%d", time.Now().Unix())
+		report.CreatedAt = time.Now()
+		middleware.WriteJSON(w, http.StatusCreated, report)
 
 	default:
 		middleware.WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")

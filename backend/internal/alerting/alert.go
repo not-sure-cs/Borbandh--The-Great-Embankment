@@ -10,10 +10,10 @@ import (
 
 // Dispatcher handles routing critical evacuation notices when Factor of Safety < 1.0.
 type Dispatcher struct {
-	store *store.Store
+	store store.Store
 }
 
-func NewDispatcher(st *store.Store) *Dispatcher {
+func NewDispatcher(st store.Store) *Dispatcher {
 	return &Dispatcher{
 		store: st,
 	}

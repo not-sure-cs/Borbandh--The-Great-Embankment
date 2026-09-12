@@ -18,7 +18,7 @@ import (
 // 5. ISRO Bhuvan Vector Geometries
 type DataCollector struct {
 	engine           *IngestionEngine
-	store            *store.Store
+	store            store.Store
 	cwcClient        *CWCClient
 	openTopoClient   *OpenTopoClient
 	nasaGPMClient    *NASAGPMClient
@@ -31,7 +31,7 @@ type DataCollector struct {
 }
 
 // NewDataCollector initializes all outbound API clients and binds them to the ingestion engine.
-func NewDataCollector(engine *IngestionEngine, st *store.Store) *DataCollector {
+func NewDataCollector(engine *IngestionEngine, st store.Store) *DataCollector {
 	return &DataCollector{
 		engine:           engine,
 		store:            st,

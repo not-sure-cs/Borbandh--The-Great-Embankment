@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"borbandh/backend/internal/alerting"
+	"borbandh/backend/internal/cache"
 	"borbandh/backend/internal/handlers"
 	"borbandh/backend/internal/ingestion"
 	"borbandh/backend/internal/middleware"
@@ -27,33 +28,59 @@ func main() {
 
 	log.Println("==================================================================")
 	log.Println("   BorBandh AI Embankment Monitoring System - Go Backend")
-	log.Println("   Architecture: 100% Vanilla Go Standard Library (Zero Frameworks)")
+	log.Println("   Architecture: PostGIS + TimescaleDB + Redis 7 Pub/Sub")
 	log.Println("==================================================================")
 
-	// 1. Initialize Thread-Safe Persistent Store & Seed Data
-	st := store.NewStore()
+	// 1. Initialize Persistent Store (Dual-Mode: PostgresStore if DATABASE_URL is set, else MemoryStore)
+	var st store.Store
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL != "" {
+		pgStore, err := store.NewPostgresStore(context.Background(), dbURL)
+		if err != nil {
+			log.Printf("[STORE WARNING] Failed to connect to PostgreSQL (%v). Falling back to MemoryStore.", err)
+			st = store.NewStore()
+		} else {
+			st = pgStore
+			defer pgStore.Close()
+		}
+	} else {
+		log.Println("[STORE] No DATABASE_URL specified. Initializing in-memory fallback store.")
+		st = store.NewStore()
+	}
 
-	// 2. Initialize Emergency Alert Dispatcher (Twilio / WhatsApp Mock & Logs)
+	// 2. Initialize Redis Caching & Distributed Pub/Sub Layer
+	redisURL := os.Getenv("REDIS_URL")
+	cacheSvc := cache.NewCacheService(redisURL)
+	defer cacheSvc.Close()
+
+	// 3. Initialize Emergency Alert Dispatcher (Twilio / WhatsApp Mock & Logs)
 	disp := alerting.NewDispatcher(st)
 
-	// 3. Initialize Standard Library SSE Real-Time Stream Broker
+	// 4. Initialize Standard Library SSE Real-Time Stream Broker
 	broker := sse.NewBroker()
 
-	// 4. Initialize Data Ingestion Engine & Outbound API Data Collector
+	// If Redis is active, subscribe to global telemetry Pub/Sub channel and route to local SSE clients
+	if cacheSvc.IsActive() {
+		cacheSvc.SubscribeTelemetry(context.Background(), func(data []byte) {
+			broker.Broadcast("telemetry_raw", string(data))
+		})
+	}
+
+	// 5. Initialize Data Ingestion Engine & Outbound API Data Collector
 	ingestEngine := ingestion.NewIngestionEngine(st)
 	collector := ingestion.NewDataCollector(ingestEngine, st)
 	collector.Start(context.Background())
 
-	// 5. Initialize Background IoT Telemetry Simulator
+	// 6. Initialize Background IoT Telemetry Simulator
 	sim := simulator.NewSimulator(st, disp, broker)
 	sim.Start()
 
-	// 5. Initialize Handlers and Register Routes on Standard http.ServeMux
+	// 7. Initialize Handlers and Register Routes on Standard http.ServeMux
 	apiHandler := handlers.NewAPIHandler(st, broker, sim)
 	mux := http.NewServeMux()
 	apiHandler.RegisterRoutes(mux)
 
-	// 6. Wrap with Middleware Chain (Recovery, CORS, Logger)
+	// 8. Wrap with Middleware Chain (Recovery, CORS, Logger)
 	handler := middleware.Chain(mux, middleware.Recovery, middleware.CORS, middleware.Logger)
 
 	server := &http.Server{
@@ -64,7 +91,7 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	// 7. Start Server in Goroutine
+	// 9. Start Server in Goroutine
 	go func() {
 		log.Printf("[SERVER] Listening on http://localhost:%s", port)
 		log.Printf("[SERVER] Health endpoint: http://localhost:%s/api/v1/health", port)
@@ -74,7 +101,7 @@ func main() {
 		}
 	}()
 
-	// 8. Graceful Shutdown Listener
+	// 10. Graceful Shutdown Listener
 	stopChan := make(chan os.Signal, 1)
 	signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 

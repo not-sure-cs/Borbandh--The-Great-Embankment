@@ -18,7 +18,7 @@ import (
 // Simulator simulates real-world IoT telemetry for edge nodes.
 type Simulator struct {
 	mu          sync.RWMutex
-	store       *store.Store
+	store       store.Store
 	dispatcher  *alerting.Dispatcher
 	broker      *sse.Broker
 	isRunning   bool
@@ -27,7 +27,7 @@ type Simulator struct {
 	cancelFunc  context.CancelFunc
 }
 
-func NewSimulator(st *store.Store, disp *alerting.Dispatcher, br *sse.Broker) *Simulator {
+func NewSimulator(st store.Store, disp *alerting.Dispatcher, br *sse.Broker) *Simulator {
 	return &Simulator{
 		store:      st,
 		dispatcher: disp,

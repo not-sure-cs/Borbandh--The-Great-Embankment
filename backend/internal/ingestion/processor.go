@@ -12,11 +12,11 @@ import (
 
 // IngestionEngine coordinates data ingestion and processing for structural, satellite, terrain, and hydraulic inputs.
 type IngestionEngine struct {
-	store *store.Store
+	store store.Store
 }
 
 // NewIngestionEngine creates a new processing pipeline bound to the in-memory store.
-func NewIngestionEngine(st *store.Store) *IngestionEngine {
+func NewIngestionEngine(st store.Store) *IngestionEngine {
 	return &IngestionEngine{store: st}
 }
 

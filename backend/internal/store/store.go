@@ -12,7 +12,7 @@ import (
 )
 
 // Store provides a thread-safe in-memory persistent data store using only the Go standard library.
-type Store struct {
+type MemoryStore struct {
 	mu            sync.RWMutex
 	telemetry     []models.NodeTelemetry
 	nodes         map[string]models.EmbankmentNode
@@ -25,8 +25,12 @@ type Store struct {
 }
 
 // NewStore initializes the repository with default Assam embankment demonstration data.
-func NewStore() *Store {
-	s := &Store{
+func NewStore() *MemoryStore {
+	return NewMemoryStore()
+}
+
+func NewMemoryStore() *MemoryStore {
+	s := &MemoryStore{
 		telemetry:     make([]models.NodeTelemetry, 0, 1000),
 		nodes:         make(map[string]models.EmbankmentNode),
 		reaches:       make(map[string]models.EmbankmentReach),
@@ -45,7 +49,7 @@ func NewStore() *Store {
 	return s
 }
 
-func (s *Store) seedNodes() {
+func (s *MemoryStore) seedNodes() {
 	defaultNodes := []models.EmbankmentNode{
 		{
 			NodeID:         "NODE-MAJULI-01",
@@ -149,7 +153,7 @@ func create50mBuffer(centerline [][]float64) [][][]float64 {
 	return [][][]float64{ring}
 }
 
-func (s *Store) seedStructuralData() {
+func (s *MemoryStore) seedStructuralData() {
 	defaultReaches := []models.EmbankmentReach{
 		{
 			ID:             "REACH-MAJULI-01",
@@ -347,7 +351,7 @@ func (s *Store) seedStructuralData() {
 	}
 }
 
-func (s *Store) seedCitizenReports() {
+func (s *MemoryStore) seedCitizenReports() {
 	s.reports = []models.CitizenReport{
 		{
 			ID:             "REP-20260901-001",
@@ -376,7 +380,7 @@ func (s *Store) seedCitizenReports() {
 	}
 }
 
-func (s *Store) seedInitialTelemetry() {
+func (s *MemoryStore) seedInitialTelemetry() {
 	// Seed historical data points for the past 2 hours
 	now := time.Now()
 	for i := 24; i >= 0; i-- {
@@ -422,7 +426,7 @@ func (s *Store) seedInitialTelemetry() {
 }
 
 // AddTelemetry records a new telemetry reading, updates node status, and trims buffer.
-func (s *Store) AddTelemetry(t models.NodeTelemetry) models.NodeTelemetry {
+func (s *MemoryStore) AddTelemetry(t models.NodeTelemetry) models.NodeTelemetry {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -463,7 +467,7 @@ func (s *Store) AddTelemetry(t models.NodeTelemetry) models.NodeTelemetry {
 }
 
 // GetTelemetryHistory returns recent telemetry records optionally filtered by nodeID.
-func (s *Store) GetTelemetryHistory(nodeID string, limit int) []models.NodeTelemetry {
+func (s *MemoryStore) GetTelemetryHistory(nodeID string, limit int) []models.NodeTelemetry {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -491,7 +495,7 @@ func (s *Store) GetTelemetryHistory(nodeID string, limit int) []models.NodeTelem
 }
 
 // GetAllNodes returns all registered edge telemetry nodes.
-func (s *Store) GetAllNodes() []models.EmbankmentNode {
+func (s *MemoryStore) GetAllNodes() []models.EmbankmentNode {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -503,7 +507,7 @@ func (s *Store) GetAllNodes() []models.EmbankmentNode {
 }
 
 // GetNodeByID returns an embankment node by its ID.
-func (s *Store) GetNodeByID(nodeID string) (models.EmbankmentNode, bool) {
+func (s *MemoryStore) GetNodeByID(nodeID string) (models.EmbankmentNode, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	n, ok := s.nodes[nodeID]
@@ -511,14 +515,14 @@ func (s *Store) GetNodeByID(nodeID string) (models.EmbankmentNode, bool) {
 }
 
 // IngestReach stores or updates an embankment reach.
-func (s *Store) IngestReach(reach models.EmbankmentReach) {
+func (s *MemoryStore) IngestReach(reach models.EmbankmentReach) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.reaches[reach.ID] = reach
 }
 
 // GetReaches returns all monitored embankment reaches.
-func (s *Store) GetReaches() []models.EmbankmentReach {
+func (s *MemoryStore) GetReaches() []models.EmbankmentReach {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -530,7 +534,7 @@ func (s *Store) GetReaches() []models.EmbankmentReach {
 }
 
 // GetReach returns a specific embankment reach by ID.
-func (s *Store) GetReach(id string) (models.EmbankmentReach, bool) {
+func (s *MemoryStore) GetReach(id string) (models.EmbankmentReach, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	r, ok := s.reaches[id]
@@ -538,14 +542,14 @@ func (s *Store) GetReach(id string) (models.EmbankmentReach, bool) {
 }
 
 // IngestBreach saves a new or historical embankment breach record.
-func (s *Store) IngestBreach(breach models.BreachRecord) {
+func (s *MemoryStore) IngestBreach(breach models.BreachRecord) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.breaches = append([]models.BreachRecord{breach}, s.breaches...)
 }
 
 // GetBreaches returns all documented historical and field breach records.
-func (s *Store) GetBreaches() []models.BreachRecord {
+func (s *MemoryStore) GetBreaches() []models.BreachRecord {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -555,14 +559,14 @@ func (s *Store) GetBreaches() []models.BreachRecord {
 }
 
 // IngestMacroReading saves a multi-source hydrometeorological reading for a reach.
-func (s *Store) IngestMacroReading(reading models.MacroEnvironmentalReading) {
+func (s *MemoryStore) IngestMacroReading(reading models.MacroEnvironmentalReading) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.macroReadings[reading.ReachID] = reading
 }
 
 // GetLatestMacroReading retrieves the latest macro reading for a reach.
-func (s *Store) GetLatestMacroReading(reachID string) (models.MacroEnvironmentalReading, bool) {
+func (s *MemoryStore) GetLatestMacroReading(reachID string) (models.MacroEnvironmentalReading, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	r, ok := s.macroReadings[reachID]
@@ -575,7 +579,7 @@ func (s *Store) GetLatestMacroReading(reachID string) (models.MacroEnvironmental
 // 3. Historical breach locations (Point)
 // 4. Dynamic hydrodynamic water level inundation polygons for simulated stage rise (Polygon)
 // 5. Low-lying depression entrapment zones (HAND hazard mask) (Polygon)
-func (s *Store) GetGeoJSON(stageDelta ...float64) map[string]interface{} {
+func (s *MemoryStore) GetGeoJSON(stageDelta ...float64) map[string]interface{} {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -761,7 +765,7 @@ func (s *Store) GetGeoJSON(stageDelta ...float64) map[string]interface{} {
 }
 
 // AddCitizenReport saves a new community report.
-func (s *Store) AddCitizenReport(r models.CitizenReport) models.CitizenReport {
+func (s *MemoryStore) AddCitizenReport(r models.CitizenReport) models.CitizenReport {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -776,7 +780,7 @@ func (s *Store) AddCitizenReport(r models.CitizenReport) models.CitizenReport {
 }
 
 // GetCitizenReports returns all community crack and seepage reports.
-func (s *Store) GetCitizenReports() []models.CitizenReport {
+func (s *MemoryStore) GetCitizenReports() []models.CitizenReport {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -786,7 +790,7 @@ func (s *Store) GetCitizenReports() []models.CitizenReport {
 }
 
 // AddAlertLog records an emergency notification dispatch.
-func (s *Store) AddAlertLog(a models.AlertLog) models.AlertLog {
+func (s *MemoryStore) AddAlertLog(a models.AlertLog) models.AlertLog {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -800,7 +804,7 @@ func (s *Store) AddAlertLog(a models.AlertLog) models.AlertLog {
 }
 
 // GetAlertLogs returns recent alert dispatch logs.
-func (s *Store) GetAlertLogs(limit int) []models.AlertLog {
+func (s *MemoryStore) GetAlertLogs(limit int) []models.AlertLog {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -814,7 +818,7 @@ func (s *Store) GetAlertLogs(limit int) []models.AlertLog {
 }
 
 // GetSystemStats computes live high-level telemetry summary.
-func (s *Store) GetSystemStats() models.SystemStats {
+func (s *MemoryStore) GetSystemStats() models.SystemStats {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
