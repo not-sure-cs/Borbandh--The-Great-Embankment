@@ -114,6 +114,16 @@ export interface SystemStats {
   server_time: string;
 }
 
+export interface SegmentRisk {
+  segment_index: number;
+  coordinates: [number, number][];
+  p_breach: number;
+  risk_tier: 'SAFE' | 'WATCH' | 'CRITICAL';
+  failure_mode: string;
+  freeboard_m: number;
+  saturation_pct: number;
+}
+
 export interface GeoFeature {
   type: 'Feature';
   properties: {
@@ -121,7 +131,7 @@ export interface GeoFeature {
     reach_id?: string;
     river?: string;
     district?: string;
-    type: 'embankment_line' | 'buffer_zone' | 'breach_location';
+    type: 'embankment_line' | 'buffer_zone' | 'breach_location' | 'inundation_zone' | 'hand_depression';
     length_km?: number;
     crest_elevation?: number;
     vulnerable?: boolean;
@@ -135,6 +145,18 @@ export interface GeoFeature {
     failure_mechanism?: string;
     remediation_status?: string;
     severity?: string;
+    // Predictive Overlays & Breach Corridor Properties
+    p_breach?: number;
+    avg_p_breach?: number;
+    risk_tier?: 'SAFE' | 'WATCH' | 'CRITICAL';
+    failure_mode?: string;
+    freeboard_m?: number;
+    segment_risks?: SegmentRisk[];
+    stage_delta_m?: number;
+    depth_class?: 'SHALLOW' | 'MODERATE' | 'DEEP';
+    depth_m?: number;
+    hand_m?: number;
+    risk_rating?: string;
   };
   geometry: {
     type: 'LineString' | 'Polygon' | 'Point';
@@ -146,3 +168,4 @@ export interface GeoJSONData {
   type: 'FeatureCollection';
   features: GeoFeature[];
 }
+

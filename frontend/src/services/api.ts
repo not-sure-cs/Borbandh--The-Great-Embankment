@@ -95,8 +95,11 @@ export const api = {
     return res.json();
   },
 
-  async getGeoJSON(): Promise<GeoJSONData> {
-    const res = await fetch(`${API_BASE}/geo/embankments`);
+  async getGeoJSON(stageDelta?: number): Promise<GeoJSONData> {
+    const url = stageDelta !== undefined && stageDelta > 0 
+      ? `${API_BASE}/geo/embankments?stage_delta=${stageDelta}` 
+      : `${API_BASE}/geo/embankments`;
+    const res = await fetch(url);
     if (!res.ok) throw new Error('Failed to fetch GeoJSON data');
     return res.json();
   }
