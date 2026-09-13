@@ -1,23 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { 
   Waves, 
   Activity, 
   ShieldCheck, 
   AlertTriangle, 
   Radio, 
-  Users, 
   Cpu, 
   MapPin, 
-  Zap
+  Zap,
+  Search
 } from 'lucide-react';
 import { SystemStats } from '../types';
+import { CivicTopBar } from './CivicTopBar';
 
 interface HeaderProps {
   stats: SystemStats | null;
   connected: boolean;
-  activeTab: 'dashboard' | 'map' | 'citizen' | 'simulator';
-  onSelectTab: (tab: 'dashboard' | 'map' | 'citizen' | 'simulator') => void;
+  activeTab: 'dashboard' | 'map' | 'simulator';
+  onSelectTab: (tab: 'dashboard' | 'map' | 'simulator') => void;
   onOpenSimModal: () => void;
+  onFocusSearch?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -26,82 +28,64 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab,
   onSelectTab,
   onOpenSimModal,
+  onFocusSearch,
 }) => {
-  const [timeStr, setTimeStr] = useState('');
-
-  useEffect(() => {
-    const update = () => {
-      const now = new Date();
-      setTimeStr(now.toLocaleTimeString('en-IN', { hour12: false, timeZone: 'Asia/Kolkata' }) + ' IST');
-    };
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
   const hasCritical = (stats?.critical_count ?? 0) > 0 || (stats?.min_factor_of_safety ?? 2) < 0.7;
 
   return (
-    <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 shadow-2xl">
+    <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-md border-b border-slate-800 shadow-2xl">
+      {/* 1. Civic Utility Bar */}
+      <CivicTopBar connected={connected} />
+
+      {/* 2. Main Brand Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
-          
+        <div className="flex items-center justify-between h-16 sm:h-18">
           {/* Logo & Platform Info */}
           <div className="flex items-center space-x-3">
-            <div className={`p-2.5 rounded-xl flex items-center justify-center transition-all ${
-              hasCritical 
-                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 critical-pulse-box' 
-                : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
-            }`}>
+            <div
+              className={`p-2.5 rounded-xl flex items-center justify-center transition-all ${
+                hasCritical
+                  ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 critical-pulse-box'
+                  : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+              }`}
+            >
               <Waves className="w-6 h-6 animate-pulse" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-bold text-lg tracking-tight text-white flex items-center gap-1.5">
-                  Bor<span className="text-cyan-400">Bandh</span> AI
+                <span className="font-extrabold text-lg tracking-tight text-white flex items-center gap-1.5">
+                  Bor<span className="text-cyan-400">Bandh</span>
+                  <span className="text-xs text-slate-400 font-mono font-normal">AI</span>
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider bg-cyan-950 text-cyan-300 border border-cyan-800">
-                  Assam Basin
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider bg-cyan-950 text-cyan-300 border border-cyan-800 hidden xs:inline-block">
+                  বৰবান্ধ • Assam Basin
                 </span>
               </div>
-              <p className="text-xs text-slate-400 hidden sm:block">
-                Autonomous Embankment Resilience & Early Warning System
+              <p className="text-[11px] text-slate-400 hidden sm:block">
+                Autonomous Embankment Resilience &amp; Early Warning System
               </p>
             </div>
           </div>
 
-          {/* Quick Metrics Badges */}
-          <div className="hidden lg:flex items-center space-x-3 text-xs">
-            <div className="bg-slate-900/90 border border-slate-800 rounded-lg px-3 py-1.5 flex items-center space-x-2">
-              <span className="text-slate-400">Nodes Active:</span>
-              <span className="font-semibold text-cyan-400 font-mono">{stats?.active_nodes ?? 5}</span>
-            </div>
-
-            <div className="bg-slate-900/90 border border-slate-800 rounded-lg px-3 py-1.5 flex items-center space-x-2">
-              <span className="text-slate-400">Status:</span>
-              <span className="text-emerald-400 font-medium flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-400"></span> {stats?.safe_count ?? 0} Safe
+          {/* Quick Search Jump Button (Cmd+K) */}
+          <div className="hidden md:flex items-center">
+            <button
+              onClick={onFocusSearch}
+              className="flex items-center space-x-3 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs text-slate-400 transition-all cursor-pointer group"
+              title="Click or press Cmd+K to search stations"
+            >
+              <Search className="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-colors" />
+              <span className="group-hover:text-slate-200 transition-colors">
+                Jump to station or reach...
               </span>
-              {(stats?.warning_count ?? 0) > 0 && (
-                <span className="text-amber-400 font-medium flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-amber-400"></span> {stats?.warning_count} Warn
-                </span>
-              )}
-              {(stats?.critical_count ?? 0) > 0 && (
-                <span className="text-rose-400 font-semibold flex items-center gap-1 animate-pulse">
-                  <span className="w-2 h-2 rounded-full bg-rose-500"></span> {stats?.critical_count} Breach
-                </span>
-              )}
-            </div>
-
-            <div className="bg-slate-900/90 border border-slate-800 rounded-lg px-3 py-1.5 flex items-center space-x-2">
-              <span className="text-slate-400">Time:</span>
-              <span className="font-mono text-slate-200">{timeStr}</span>
-            </div>
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-semibold text-slate-400 bg-slate-800 border border-slate-700 rounded shadow-sm">
+                ⌘K
+              </kbd>
+            </button>
           </div>
 
-          {/* Right Action: SSE Live Status & Simulator Trigger */}
-          <div className="flex items-center space-x-3">
+          {/* Right Action: Simulate Breach & Quick Status Badges */}
+          <div className="flex items-center space-x-2.5 sm:space-x-3">
             <button
               onClick={onOpenSimModal}
               className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-amber-500 to-rose-500 text-white hover:brightness-110 shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
@@ -109,68 +93,47 @@ export const Header: React.FC<HeaderProps> = ({
               <Zap className="w-3.5 h-3.5" />
               <span>Simulate Breach</span>
             </button>
-
-            <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 px-2.5 py-1.5 rounded-lg text-xs">
-              <span className={`w-2.5 h-2.5 rounded-full ${connected ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'}`}></span>
-              <span className="text-slate-300 font-mono text-[11px] hidden sm:inline">
-                {connected ? 'LIVE STREAM' : 'RECONNECTING'}
-              </span>
-            </div>
           </div>
-
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center space-x-1 sm:space-x-2 border-t border-slate-800/60 overflow-x-auto py-2 scrollbar-none text-xs sm:text-sm font-medium">
+        <nav aria-label="Platform Views" className="flex items-center space-x-1 sm:space-x-2 border-t border-slate-800/80 overflow-x-auto py-2 scrollbar-none text-xs sm:text-sm font-medium">
           <button
             onClick={() => onSelectTab('dashboard')}
-            className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg transition-colors whitespace-nowrap ${
+            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
               activeTab === 'dashboard'
                 ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
             }`}
           >
             <Activity className="w-4 h-4" />
-            <span>Overview & Gauges</span>
+            <span>Overview &amp; Triage</span>
           </button>
 
           <button
             onClick={() => onSelectTab('map')}
-            className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg transition-colors whitespace-nowrap ${
+            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
               activeTab === 'map'
                 ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
             }`}
           >
             <MapPin className="w-4 h-4" />
-            <span>GIS Map & Satellites</span>
-          </button>
-
-          <button
-            onClick={() => onSelectTab('citizen')}
-            className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg transition-colors whitespace-nowrap ${
-              activeTab === 'citizen'
-                ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Citizen Crowdsource</span>
+            <span>GIS Map &amp; Satellites</span>
           </button>
 
           <button
             onClick={() => onSelectTab('simulator')}
-            className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg transition-colors whitespace-nowrap ${
+            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
               activeTab === 'simulator'
                 ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
             }`}
           >
             <Cpu className="w-4 h-4" />
-            <span>IoT Edge Lab</span>
+            <span>IoT Simulation Lab</span>
           </button>
-        </div>
-
+        </nav>
       </div>
     </header>
   );

@@ -1,0 +1,15 @@
+#text files
+.txt
+
+#images
+.jpg
+
+# Environment files
+.env
+
+# Binaries
+main
+*.exe
+*.test
+
+backend/bin

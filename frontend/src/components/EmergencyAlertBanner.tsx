@@ -22,11 +22,15 @@ export const EmergencyAlertBanner: React.FC<EmergencyAlertBannerProps> = ({
   const isBreach = fs < 0.7;
 
   return (
-    <div className={`w-full border-b transition-all duration-300 ${
-      isBreach
-        ? 'bg-rose-950/90 border-rose-600/80 text-white critical-pulse-box'
-        : 'bg-amber-950/80 border-amber-600/60 text-amber-100'
-    }`}>
+    <div 
+      role="alert"
+      aria-live="assertive"
+      className={`w-full border-b transition-all duration-300 ${
+        isBreach
+          ? 'bg-rose-950/90 border-rose-600/80 text-white critical-pulse-box'
+          : 'bg-amber-950/80 border-amber-600/60 text-amber-100'
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
         
         {/* Main Alert Message Bar */}

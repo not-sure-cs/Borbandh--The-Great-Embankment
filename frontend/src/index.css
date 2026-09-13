@@ -10,7 +10,9 @@ body {
   margin: 0;
   min-height: 100vh;
   background-color: #020617;
+  color: #f8fafc;
   overflow-x: hidden;
+  font-family: "Google Sans", "Product Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 /* Custom scrollbar */
@@ -51,5 +53,5 @@ body {
 }
 
 .leaflet-tile {
-  filter: brightness(0.7) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+  filter: brightness(0.8) contrast(1.1) saturate(0.9);
 }
