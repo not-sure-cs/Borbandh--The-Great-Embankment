@@ -1,0 +1,444 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Current Factor of Safety (Fs)",
+      "type": "stat",
+      "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#ef4444", "value": null },
+              { "color": "#f59e0b", "value": 1.0 },
+              { "color": "#10b981", "value": 1.5 }
+            ]
+          },
+          "unit": "none",
+          "decimals": 3
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+          "editorMode": "code",
+          "format": "table",
+          "rawSql": "SELECT factor_of_safety FROM node_telemetry WHERE (node_id = '$node_id' OR '$node_id' = 'ALL') ORDER BY time DESC LIMIT 1;",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "title": "Active Embankment Stations",
+      "type": "stat",
+      "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "#06b6d4", "mode": "fixed" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#06b6d4", "value": null }] },
+          "unit": "none"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+          "editorMode": "code",
+          "format": "table",
+          "rawSql": "SELECT COUNT(*) AS active_nodes FROM embankment_nodes;",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "title": "Critical Breach Risk Stations (Fs < 1.0)",
+      "type": "stat",
+      "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10b981", "value": null },
+              { "color": "#ef4444", "value": 1.0 }
+            ]
+          },
+          "unit": "none"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+          "editorMode": "code",
+          "format": "table",
+          "rawSql": "SELECT COUNT(DISTINCT node_id) AS critical_stations FROM node_telemetry WHERE time > NOW() - INTERVAL '1 hour' AND factor_of_safety < 1.0;",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "title": "Dispatched Evacuation Alerts (24h)",
+      "type": "stat",
+      "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10b981", "value": null },
+              { "color": "#f59e0b", "value": 1.0 },
+              { "color": "#ef4444", "value": 5.0 }
+            ]
+          },
+          "unit": "none"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+          "editorMode": "code",
+          "format": "table",
+          "rawSql": "SELECT COUNT(*) AS total_alerts FROM alert_logs WHERE sent_at > NOW() - INTERVAL '24 hours';",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 8, "w": 7, "x": 0, "y": 4 },
+      "id": 5,
+      "title": "Geotechnical Factor of Safety Gauge",
+      "type": "gauge",
+      "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "max": 2.0,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#ef4444", "value": null },
+              { "color": "#f59e0b", "value": 1.0 },
+              { "color": "#10b981", "value": 1.5 }
+            ]
+          },
+          "unit": "none",
+          "decimals": 3
+        }
+      },
+      "options": {
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+          "editorMode": "code",
+          "format": "table",
+          "rawSql": "SELECT factor_of_safety FROM node_telemetry WHERE (node_id = '$node_id' OR '$node_id' = 'ALL') ORDER BY time DESC LIMIT 1;",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 8, "w": 17, "x": 7, "y": 4 },
+      "id": 6,
+      "title": "High-Frequency IoT Telemetry Multi-Series (Moisture, Tilt & Acoustic RMS)",
+      "type": "timeseries",
+      "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "showPoints": "auto",
+            "spanNulls": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Soil Moisture (%)" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#0284c7", "mode": "fixed" } },
+              { "id": "custom.axisPlacement", "value": "left" },
+              { "id": "unit", "value": "percent" },
+              { "id": "max", "value": 100 },
+              { "id": "min", "value": 0 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Tilt Angle (°)" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#f59e0b", "mode": "fixed" } },
+              { "id": "custom.axisPlacement", "value": "left" },
+              { "id": "unit", "value": "degree" },
+              { "id": "max", "value": 45 },
+              { "id": "min", "value": 0 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Acoustic Piping RMS" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#a855f7", "mode": "fixed" } },
+              { "id": "custom.axisPlacement", "value": "right" },
+              { "id": "unit", "value": "short" },
+              { "id": "min", "value": 0 }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawSql": "SELECT time AS \"time\", soil_moisture AS \"Soil Moisture (%)\", tilt_angle AS \"Tilt Angle (°)\", audio_rms AS \"Acoustic Piping RMS\" FROM node_telemetry WHERE (node_id = '$node_id' OR '$node_id' = 'ALL') AND $__timeFilter(time) ORDER BY time ASC;",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 12 },
+      "id": 7,
+      "title": "Geospatial Monitoring Nodes (Brahmaputra & Barak Basins)",
+      "type": "geomap",
+      "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#ef4444", "value": null },
+              { "color": "#f59e0b", "value": 1.0 },
+              { "color": "#10b981", "value": 1.5 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "view": {
+          "id": "coords",
+          "lat": 26.55,
+          "lon": 93.4,
+          "zoom": 7.5
+        },
+        "layers": [
+          {
+            "type": "markers",
+            "name": "Embankment Stations",
+            "config": {
+              "showLegend": true,
+              "size": { "fixed": 12, "min": 6, "max": 18 },
+              "color": { "field": "factor_of_safety" }
+            },
+            "location": {
+              "mode": "coords",
+              "latitude": "latitude",
+              "longitude": "longitude"
+            }
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+          "editorMode": "code",
+          "format": "table",
+          "rawSql": "SELECT n.node_id, n.zone_name, n.river, n.latitude, n.longitude, COALESCE(t.factor_of_safety, 1.85) AS factor_of_safety FROM embankment_nodes n LEFT JOIN LATERAL (SELECT factor_of_safety FROM node_telemetry WHERE node_id = n.node_id ORDER BY time DESC LIMIT 1) t ON true;",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 12 },
+      "id": 8,
+      "title": "Macro Hydraulic & CWC River Stage Drivers",
+      "type": "timeseries",
+      "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2 }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "CWC Water Level (m)" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#0284c7", "mode": "fixed" } },
+              { "id": "unit", "value": "lengthm" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "CWC Danger Level (m)" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#ef4444", "mode": "fixed" } },
+              { "id": "custom.lineStyle", "value": { "dash": [10, 5], "fill": "dash" } },
+              { "id": "unit", "value": "lengthm" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Freeboard Margin (m)" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#10b981", "mode": "fixed" } },
+              { "id": "unit", "value": "lengthm" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "72h Cumulative Rain (mm)" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#6366f1", "mode": "fixed" } },
+              { "id": "custom.axisPlacement", "value": "right" },
+              { "id": "unit", "value": "lengthmm" }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawSql": "SELECT time AS \"time\", cwc_water_level_m AS \"CWC Water Level (m)\", cwc_danger_level_m AS \"CWC Danger Level (m)\", freeboard_m AS \"Freeboard Margin (m)\", rainfall_72h_mm AS \"72h Cumulative Rain (mm)\" FROM macro_readings WHERE $__timeFilter(time) ORDER BY time ASC;",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 21 },
+      "id": 9,
+      "title": "Dispatched Emergency Evacuation Alert Logs (Twilio SMS & WhatsApp Business)",
+      "type": "table",
+      "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto" } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "level" },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": { "mode": "basic", "type": "color-background" }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  { "options": { "CRITICAL": { "color": "#ef4444", "index": 0 } }, "type": "value" },
+                  { "options": { "WARNING": { "color": "#f59e0b", "index": 1 } }, "type": "value" }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+          "editorMode": "code",
+          "format": "table",
+          "rawSql": "SELECT sent_at AS \"Dispatched Time\", zone_name AS \"Embankment Reach\", factor_of_safety AS \"Fs Score\", level, channel AS \"Channel\", recipient AS \"Recipient Contact\", message AS \"Emergency Evacuation Dispatch\" FROM alert_logs ORDER BY sent_at DESC LIMIT 50;",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["borbandh", "iot", "embankment", "timescaledb", "assam"],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "NODE-MAJULI-01",
+          "value": "NODE-MAJULI-01"
+        },
+        "datasource": { "type": "postgres", "uid": "timescaledb-borbandh" },
+        "definition": "SELECT node_id FROM embankment_nodes ORDER BY node_id;",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Embankment Station",
+        "multi": false,
+        "name": "node_id",
+        "options": [],
+        "query": "SELECT node_id FROM embankment_nodes ORDER BY node_id;",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"]
+  },
+  "timezone": "browser",
+  "title": "BorBandh Embankment Resilience & Early Warning Overview",
+  "uid": "borbandh-resilience",
+  "version": 1
+}

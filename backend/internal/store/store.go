@@ -114,43 +114,7 @@ func (s *MemoryStore) seedNodes() {
 }
 
 func create50mBuffer(centerline [][]float64) [][][]float64 {
-	if len(centerline) < 2 {
-		return [][][]float64{}
-	}
-	const latOff = 0.000451
-	const lonOff = 0.000502
-	left := make([][]float64, len(centerline))
-	right := make([][]float64, len(centerline))
-
-	for i := 0; i < len(centerline); i++ {
-		var dx, dy float64
-		if i == 0 {
-			dx = centerline[1][0] - centerline[0][0]
-			dy = centerline[1][1] - centerline[0][1]
-		} else if i == len(centerline)-1 {
-			dx = centerline[i][0] - centerline[i-1][0]
-			dy = centerline[i][1] - centerline[i-1][1]
-		} else {
-			dx = centerline[i+1][0] - centerline[i-1][0]
-			dy = centerline[i+1][1] - centerline[i-1][1]
-		}
-		l := math.Hypot(dx, dy)
-		if l == 0 {
-			l = 0.0001
-		}
-		nx := -dy / l
-		ny := dx / l
-		left[i] = []float64{centerline[i][0] + nx*lonOff, centerline[i][1] + ny*latOff}
-		right[i] = []float64{centerline[i][0] - nx*lonOff, centerline[i][1] - ny*latOff}
-	}
-
-	ring := make([][]float64, 0, len(left)+len(right)+1)
-	ring = append(ring, left...)
-	for i := len(right) - 1; i >= 0; i-- {
-		ring = append(ring, right[i])
-	}
-	ring = append(ring, []float64{left[0][0], left[0][1]})
-	return [][][]float64{ring}
+	return calculator.GenerateSmoothBuffer(centerline, 50.0)
 }
 
 func (s *MemoryStore) seedStructuralData() {
@@ -167,11 +131,15 @@ func (s *MemoryStore) seedStructuralData() {
 			Vulnerability:  true,
 			ActiveNodeID:   "NODE-MAJULI-01",
 			Coordinates: [][]float64{
-				{94.1500, 26.9300},
-				{94.1700, 26.9400},
+				{94.1350, 26.9240},
+				{94.1480, 26.9310},
+				{94.1620, 26.9370},
+				{94.1750, 26.9415},
 				{94.1873, 26.9452},
-				{94.2100, 26.9550},
-				{94.2400, 26.9600},
+				{94.2020, 26.9510},
+				{94.2180, 26.9560},
+				{94.2340, 26.9595},
+				{94.2510, 26.9620},
 			},
 			LastSurveyDate: "2026-04-12",
 		},
@@ -187,10 +155,14 @@ func (s *MemoryStore) seedStructuralData() {
 			Vulnerability:  false,
 			ActiveNodeID:   "NODE-DIBRUGARH-02",
 			Coordinates: [][]float64{
-				{94.8800, 27.4550},
+				{94.8650, 27.4480},
+				{94.8800, 27.4570},
 				{94.8950, 27.4650},
+				{94.9080, 27.4710},
 				{94.9120, 27.4728},
-				{94.9300, 27.4800},
+				{94.9240, 27.4770},
+				{94.9380, 27.4815},
+				{94.9520, 27.4850},
 			},
 			LastSurveyDate: "2026-03-20",
 		},
@@ -206,9 +178,13 @@ func (s *MemoryStore) seedStructuralData() {
 			Vulnerability:  false,
 			ActiveNodeID:   "NODE-TEZPUR-03",
 			Coordinates: [][]float64{
-				{92.7750, 26.6200},
+				{92.7600, 26.6120},
+				{92.7750, 26.6210},
+				{92.7880, 26.6290},
 				{92.7926, 26.6338},
-				{92.8100, 26.6450},
+				{92.8020, 26.6400},
+				{92.8150, 26.6470},
+				{92.8280, 26.6520},
 			},
 			LastSurveyDate: "2026-01-15",
 		},
@@ -224,9 +200,13 @@ func (s *MemoryStore) seedStructuralData() {
 			Vulnerability:  false,
 			ActiveNodeID:   "NODE-GUWAHATI-04",
 			Coordinates: [][]float64{
+				{91.6500, 26.1580},
 				{91.6650, 26.1650},
+				{91.6780, 26.1710},
 				{91.6854, 26.1738},
-				{91.7050, 26.1800},
+				{91.6960, 26.1775},
+				{91.7080, 26.1805},
+				{91.7200, 26.1820},
 			},
 			LastSurveyDate: "2026-02-10",
 		},
@@ -242,9 +222,13 @@ func (s *MemoryStore) seedStructuralData() {
 			Vulnerability:  true,
 			ActiveNodeID:   "NODE-SILCHAR-05",
 			Coordinates: [][]float64{
-				{92.7550, 24.8150},
+				{92.7400, 24.8050},
+				{92.7550, 24.8160},
+				{92.7680, 24.8260},
 				{92.7789, 24.8333},
+				{92.7910, 24.8390},
 				{92.8050, 24.8450},
+				{92.8200, 24.8490},
 			},
 			LastSurveyDate: "2026-05-01",
 		},
@@ -259,15 +243,19 @@ func (s *MemoryStore) seedStructuralData() {
 			EmbankmentType: "Multi-Tiered Geo-Textile Tubes with Sand Infill",
 			Vulnerability:  false,
 			Coordinates: [][]float64{
+				{94.4650, 27.1080},
 				{94.4800, 27.1200},
-				{94.5100, 27.1400},
+				{94.4980, 27.1320},
+				{94.5150, 27.1440},
 				{94.5350, 27.1650},
+				{94.5520, 27.1800},
 			},
 			LastSurveyDate: "2026-03-05",
 		},
 	}
 
 	for _, r := range defaultReaches {
+		r.Coordinates = calculator.ResampleSpline(r.Coordinates, 60.0)
 		r.BufferPolygon = create50mBuffer(r.Coordinates)
 		s.reaches[r.ID] = r
 	}
@@ -757,6 +745,14 @@ func (s *MemoryStore) GetGeoJSON(stageDelta ...float64) map[string]interface{} {
 			},
 		})
 	}
+
+	// 5. Sentinel-1 SAR Riparian Ground Saturation (Topography-conforming)
+	avgMoisture := 48.0
+	if len(s.telemetry) > 0 {
+		avgMoisture = s.telemetry[len(s.telemetry)-1].SoilMoisture
+	}
+	sarFeatures := calculator.GenerateRiparianSARSaturation(reachList, avgMoisture)
+	features = append(features, sarFeatures...)
 
 	return map[string]interface{}{
 		"type":     "FeatureCollection",

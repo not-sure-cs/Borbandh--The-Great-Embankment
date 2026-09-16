@@ -1,0 +1,21 @@
+apiVersion: 1
+
+datasources:
+  - name: TimescaleDB-BorBandh
+    type: postgres
+    uid: timescaledb-borbandh
+    access: proxy
+    url: timescaledb:5432
+    user: borbandh_app
+    isDefault: true
+    jsonData:
+      database: borbandh_telemetry
+      sslmode: disable
+      postgresVersion: 1600
+      timescaledb: true
+      maxOpenConns: 25
+      maxIdleConns: 5
+      connMaxLifetime: 14400
+    secureJsonData:
+      password: borbandh_secure_password
+    editable: false
