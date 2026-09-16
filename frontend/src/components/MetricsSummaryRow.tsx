@@ -1,5 +1,5 @@
 import React from 'react';
-import { Radio, AlertTriangle, ShieldCheck, PhoneCall, Layers, Activity } from 'lucide-react';
+import { Radio, PhoneCall, Layers, Activity } from 'lucide-react';
 import { SystemStats, EmbankmentNode } from '../types';
 
 interface MetricsSummaryRowProps {
@@ -13,7 +13,6 @@ export const MetricsSummaryRow: React.FC<MetricsSummaryRowProps> = ({
   nodes,
   totalAlertsCount,
 }) => {
-  // Compute lowest Fs from nodes or stats
   const activeCount = nodes.length > 0 ? nodes.length : stats?.active_nodes ?? 5;
   const lowestFs = nodes.reduce((min, n) => {
     const fs = n.last_telemetry?.factor_of_safety ?? 2.0;
@@ -28,125 +27,145 @@ export const MetricsSummaryRow: React.FC<MetricsSummaryRowProps> = ({
   const alertsSent = totalAlertsCount || stats?.total_alerts_sent || 0;
 
   return (
-    <section aria-label="Key Embankment Telemetry Metrics" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <section aria-label="Key Embankment Telemetry Metrics" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      
       {/* 1. Active Telemetry Nodes */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between transition-all hover:border-slate-700">
-        <div className="flex items-center justify-between text-slate-400">
-          <span className="text-[10px] font-mono uppercase tracking-wider font-semibold">
+      <div className="bg-white border border-gray-200/90 rounded-2xl p-6 shadow-2xs hover:shadow-md transition-shadow flex flex-col justify-between">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             Telemetry Stations
           </span>
-          <Radio className="w-4 h-4 text-cyan-400 animate-pulse" />
+          <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+            <Radio className="w-4 h-4" />
+          </div>
         </div>
-        <div className="mt-2 flex items-baseline justify-between">
-          <span className="text-2xl font-bold font-mono text-white tracking-tight">
-            {activeCount}
-            <span className="text-xs text-slate-500 font-sans ml-1">Nodes Online</span>
-          </span>
-          <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">
-            100% HEALTH
+        <div className="mt-4 flex items-baseline justify-between">
+          <div>
+            <span className="text-3xl font-semibold text-gray-900 tracking-tight">
+              {activeCount}
+            </span>
+            <span className="text-sm text-gray-500 ml-1.5 font-normal">Active Nodes</span>
+          </div>
+          <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+            100% Online
           </span>
         </div>
-        <div className="mt-2 pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
+        <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex items-center justify-between">
           <span>Solar ESP32 Edge Mesh</span>
-          <span className="text-emerald-400 font-mono">0 Offline</span>
+          <span className="text-emerald-700 font-medium">0 Offline</span>
         </div>
       </div>
 
       {/* 2. Lowest Regional Factor of Safety */}
       <div
-        className={`rounded-xl p-4 border flex flex-col justify-between transition-all ${
+        className={`bg-white border rounded-2xl p-6 shadow-2xs hover:shadow-md transition-shadow flex flex-col justify-between ${
           isFsCritical
-            ? 'bg-rose-950/40 border-rose-600/70 critical-pulse-box'
+            ? 'border-rose-300 ring-2 ring-rose-100 critical-pulse-box'
             : isFsWarning
-            ? 'bg-amber-950/30 border-amber-600/60'
-            : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
+            ? 'border-amber-300 ring-2 ring-amber-50'
+            : 'border-gray-200/90'
         }`}
       >
-        <div className="flex items-center justify-between text-slate-400">
-          <span className="text-[10px] font-mono uppercase tracking-wider font-semibold">
-            Lowest Regional F<sub>s</sub>
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            Regional Lowest F<sub>s</sub>
           </span>
-          <Activity
-            className={`w-4 h-4 ${
-              isFsCritical ? 'text-rose-400' : isFsWarning ? 'text-amber-400' : 'text-emerald-400'
-            }`}
-          />
-        </div>
-        <div className="mt-2 flex items-baseline justify-between">
-          <span
-            className={`text-2xl font-bold font-mono tracking-tight ${
+          <div
+            className={`p-2 rounded-xl ${
               isFsCritical
-                ? 'text-rose-400 animate-pulse'
+                ? 'bg-rose-50 text-rose-600'
                 : isFsWarning
-                ? 'text-amber-400'
-                : 'text-emerald-400'
+                ? 'bg-amber-50 text-amber-600'
+                : 'bg-emerald-50 text-emerald-600'
+            }`}
+          >
+            <Activity className="w-4 h-4" />
+          </div>
+        </div>
+        <div className="mt-4 flex items-baseline justify-between">
+          <span
+            className={`text-3xl font-semibold font-mono tracking-tight ${
+              isFsCritical
+                ? 'text-rose-600'
+                : isFsWarning
+                ? 'text-amber-600'
+                : 'text-gray-900'
             }`}
           >
             {lowestFs.toFixed(3)}
           </span>
           <span
-            className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded border ${
+            className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${
               isFsCritical
-                ? 'bg-rose-900/60 text-rose-200 border-rose-500'
+                ? 'bg-rose-50 text-rose-700 border-rose-200'
                 : isFsWarning
-                ? 'bg-amber-900/60 text-amber-200 border-amber-500'
-                : 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                ? 'bg-amber-50 text-amber-800 border-amber-200'
+                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
             }`}
           >
-            {isFsCritical ? 'BREACH ALERT' : isFsWarning ? 'WATCH TIER' : 'SAFE'}
+            {isFsCritical ? 'Breach Alert' : isFsWarning ? 'Watch Tier' : 'Safe Tier'}
           </span>
         </div>
-        <div className="mt-2 pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
+        <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex items-center justify-between">
           <span>Alert threshold: 1.00</span>
-          <span className="text-slate-500 font-mono">Collapse &lt; 0.70</span>
+          <span className="text-gray-400 font-mono">Collapse &lt; 0.70</span>
         </div>
       </div>
 
       {/* 3. Evacuation Alerts & Civil Protection Dispatches */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between transition-all hover:border-slate-700">
-        <div className="flex items-center justify-between text-slate-400">
-          <span className="text-[10px] font-mono uppercase tracking-wider font-semibold">
+      <div className="bg-white border border-gray-200/90 rounded-2xl p-6 shadow-2xs hover:shadow-md transition-shadow flex flex-col justify-between">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             Civil Dispatches (24h)
           </span>
-          <PhoneCall className="w-4 h-4 text-emerald-400" />
+          <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+            <PhoneCall className="w-4 h-4" />
+          </div>
         </div>
-        <div className="mt-2 flex items-baseline justify-between">
-          <span className="text-2xl font-bold font-mono text-white tracking-tight">
-            {alertsSent}
-            <span className="text-xs text-slate-500 font-sans ml-1">Dispatches</span>
-          </span>
-          <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-            TWILIO / WA
+        <div className="mt-4 flex items-baseline justify-between">
+          <div>
+            <span className="text-3xl font-semibold text-gray-900 tracking-tight">
+              {alertsSent}
+            </span>
+            <span className="text-sm text-gray-500 ml-1.5 font-normal">Notices</span>
+          </div>
+          <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+            Twilio / WA
           </span>
         </div>
-        <div className="mt-2 pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
+        <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex items-center justify-between">
           <span>DDMA Evacuation Relay</span>
-          <span className="text-emerald-400 font-mono">Active</span>
+          <span className="text-emerald-700 font-medium">Active</span>
         </div>
       </div>
 
       {/* 4. Monitored Embankment Line */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between transition-all hover:border-slate-700">
-        <div className="flex items-center justify-between text-slate-400">
-          <span className="text-[10px] font-mono uppercase tracking-wider font-semibold">
+      <div className="bg-white border border-gray-200/90 rounded-2xl p-6 shadow-2xs hover:shadow-md transition-shadow flex flex-col justify-between">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             Monitored Embankments
           </span>
-          <Layers className="w-4 h-4 text-blue-400" />
+          <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
+            <Layers className="w-4 h-4" />
+          </div>
         </div>
-        <div className="mt-2 flex items-baseline justify-between">
-          <span className="text-2xl font-bold font-mono text-white tracking-tight">
-            {totalKm}
-            <span className="text-xs text-slate-500 font-sans ml-1">km line</span>
-          </span>
-          <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800">
-            {totalReaches} REACHES
+        <div className="mt-4 flex items-baseline justify-between">
+          <div>
+            <span className="text-3xl font-semibold text-gray-900 tracking-tight">
+              {totalKm}
+            </span>
+            <span className="text-sm text-gray-500 ml-1.5 font-normal">km line</span>
+          </div>
+          <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+            {totalReaches} Reaches
           </span>
         </div>
-        <div className="mt-2 pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
-          <span>ISRO-Bhuvan Spatial Sync</span>
-          <span className="text-cyan-400 font-mono">50m Buffer</span>
+        <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex items-center justify-between">
+          <span>ISRO-Bhuvan Geospatial Sync</span>
+          <span className="text-blue-700 font-medium">50m Buffer</span>
         </div>
       </div>
+
     </section>
   );
 };

@@ -5,11 +5,9 @@ import {
   AlertTriangle, 
   AlertCircle, 
   Battery, 
-  Signal, 
   Radio, 
   Droplets, 
   Compass, 
-  Volume2,
   ChevronRight
 } from 'lucide-react';
 
@@ -26,42 +24,44 @@ export const StationTableView: React.FC<StationTableViewProps> = ({
 }) => {
   if (nodes.length === 0) {
     return (
-      <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-8 text-center text-slate-400 text-xs">
+      <div className="bg-white border border-gray-200/90 rounded-2xl p-10 text-center text-gray-500 text-sm shadow-2xs">
         No embankment telemetry stations match the selected filters.
       </div>
     );
   }
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-xl overflow-hidden shadow-xl flex flex-col">
+    <div className="bg-white border border-gray-200/90 rounded-2xl overflow-hidden shadow-2xs flex flex-col">
       {/* Header bar */}
-      <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
-        <div className="flex items-center space-x-2">
-          <Radio className="w-4 h-4 text-cyan-400 animate-pulse" />
-          <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-            Live Embankment Station Feed
+      <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
+        <div className="flex items-center space-x-2.5">
+          <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600">
+            <Radio className="w-4 h-4" />
+          </div>
+          <h3 className="text-sm font-semibold text-gray-900">
+            Active Embankment Sensor Stations
           </h3>
         </div>
-        <span className="text-[10px] font-mono text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-          Click station to inspect diagnostics
+        <span className="text-xs text-gray-500 font-normal bg-gray-50 px-3 py-1 rounded-full border border-gray-200">
+          Select station to view diagnostics
         </span>
       </div>
 
-      {/* High-density Table */}
+      {/* High-density Decluttered Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs border-collapse">
+        <table className="w-full text-left text-sm border-collapse">
           <thead>
-            <tr className="border-b border-slate-800 bg-slate-950 text-[10px] font-mono uppercase text-slate-400 tracking-wider select-none">
-              <th scope="col" className="py-2.5 px-3 font-semibold">Station / Zone</th>
-              <th scope="col" className="py-2.5 px-3 font-semibold text-center">F<sub>s</sub> Index</th>
-              <th scope="col" className="py-2.5 px-3 font-semibold text-right">Moisture</th>
-              <th scope="col" className="py-2.5 px-3 font-semibold text-right">Tilt</th>
-              <th scope="col" className="py-2.5 px-3 font-semibold text-right">Acoustic</th>
-              <th scope="col" className="py-2.5 px-3 font-semibold text-center">Battery</th>
-              <th scope="col" className="py-2.5 px-2 text-center sr-only">Inspect</th>
+            <tr className="border-b border-gray-100 bg-gray-50/70 text-xs font-medium text-gray-500 uppercase tracking-wider select-none">
+              <th scope="col" className="py-3 px-4">Station / Reach</th>
+              <th scope="col" className="py-3 px-4 text-center">F<sub>s</sub> Index</th>
+              <th scope="col" className="py-3 px-4 text-right">Moisture</th>
+              <th scope="col" className="py-3 px-4 text-right">Tilt</th>
+              <th scope="col" className="py-3 px-4 text-right">Piping</th>
+              <th scope="col" className="py-3 px-4 text-center">Battery</th>
+              <th scope="col" className="py-3 px-2 text-center sr-only">Inspect</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60">
+          <tbody className="divide-y divide-gray-100">
             {nodes.map((node) => {
               const isSelected = node.node_id === selectedNodeId;
               const telemetry = node.last_telemetry;
@@ -83,40 +83,40 @@ export const StationTableView: React.FC<StationTableViewProps> = ({
                   tabIndex={0}
                   role="row"
                   aria-selected={isSelected}
-                  className={`cursor-pointer transition-colors outline-none focus:bg-slate-800/80 ${
+                  className={`cursor-pointer transition-colors outline-none focus:bg-blue-50/40 ${
                     isSelected
-                      ? 'bg-slate-800/90 text-white font-medium border-l-4 border-l-cyan-400'
-                      : 'hover:bg-slate-800/50 text-slate-300'
-                  } ${isCritical ? 'bg-rose-950/20' : ''}`}
+                      ? 'bg-blue-50/80 text-gray-900 font-medium border-l-4 border-l-blue-600'
+                      : 'hover:bg-gray-50/80 text-gray-700'
+                  } ${isCritical ? 'bg-rose-50/40' : ''}`}
                 >
                   {/* Station & Location */}
-                  <td className="py-3 px-3">
-                    <div className="flex items-center space-x-2">
+                  <td className="py-3.5 px-4">
+                    <div className="flex items-center space-x-3">
                       <div className="shrink-0">
                         {isCritical ? (
-                          <div className="p-1 rounded bg-rose-500/20 text-rose-400 border border-rose-500/40">
-                            <AlertCircle className="w-3.5 h-3.5 animate-bounce" />
+                          <div className="p-1.5 rounded-lg bg-rose-100 text-rose-600">
+                            <AlertCircle className="w-4 h-4" />
                           </div>
                         ) : isWarning ? (
-                          <div className="p-1 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40">
-                            <AlertTriangle className="w-3.5 h-3.5" />
+                          <div className="p-1.5 rounded-lg bg-amber-100 text-amber-700">
+                            <AlertTriangle className="w-4 h-4" />
                           </div>
                         ) : (
-                          <div className="p-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-                            <ShieldCheck className="w-3.5 h-3.5" />
+                          <div className="p-1.5 rounded-lg bg-emerald-100 text-emerald-700">
+                            <ShieldCheck className="w-4 h-4" />
                           </div>
                         )}
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center space-x-1.5">
-                          <span className="font-mono font-bold text-xs text-white">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-semibold text-gray-900 text-xs">
                             {node.node_id}
                           </span>
-                          <span className="text-[10px] text-slate-400 hidden sm:inline">
-                            • {node.river}
+                          <span className="text-xs text-gray-500 hidden sm:inline">
+                            • {node.river} Reach
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-400 truncate max-w-[160px] sm:max-w-[200px]">
+                        <p className="text-xs text-gray-500 truncate max-w-[180px] sm:max-w-[220px]">
                           {node.zone_name}
                         </p>
                       </div>
@@ -124,14 +124,14 @@ export const StationTableView: React.FC<StationTableViewProps> = ({
                   </td>
 
                   {/* Factor of Safety Fs Badge */}
-                  <td className="py-3 px-3 text-center">
+                  <td className="py-3.5 px-4 text-center">
                     <span
-                      className={`inline-block px-2 py-0.5 rounded font-mono font-bold text-xs border ${
+                      className={`inline-block px-3 py-0.5 rounded-full font-mono font-semibold text-xs border ${
                         isCritical
-                          ? 'bg-rose-900/60 text-rose-300 border-rose-500 animate-pulse'
+                          ? 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse'
                           : isWarning
-                          ? 'bg-amber-900/60 text-amber-300 border-amber-500'
-                          : 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                          ? 'bg-amber-50 text-amber-800 border-amber-200'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                       }`}
                     >
                       {fs.toFixed(2)}
@@ -139,39 +139,39 @@ export const StationTableView: React.FC<StationTableViewProps> = ({
                   </td>
 
                   {/* Soil Moisture */}
-                  <td className="py-3 px-3 text-right font-mono">
-                    <div className="flex items-center justify-end space-x-1 text-sky-400">
-                      <Droplets className="w-3 h-3 text-sky-400 opacity-60 hidden sm:inline" />
+                  <td className="py-3.5 px-4 text-right font-mono text-xs">
+                    <div className="flex items-center justify-end space-x-1 text-sky-700">
+                      <Droplets className="w-3.5 h-3.5 opacity-60 hidden sm:inline" />
                       <span>{telemetry?.soil_moisture.toFixed(0) ?? 35}%</span>
                     </div>
                   </td>
 
                   {/* Tilt Angle */}
-                  <td className="py-3 px-3 text-right font-mono">
-                    <div className="flex items-center justify-end space-x-1 text-amber-400">
-                      <Compass className="w-3 h-3 text-amber-400 opacity-60 hidden sm:inline" />
+                  <td className="py-3.5 px-4 text-right font-mono text-xs">
+                    <div className="flex items-center justify-end space-x-1 text-amber-700">
+                      <Compass className="w-3.5 h-3.5 opacity-60 hidden sm:inline" />
                       <span>{telemetry?.tilt_angle.toFixed(1) ?? 1.0}°</span>
                     </div>
                   </td>
 
                   {/* Audio RMS */}
-                  <td className="py-3 px-3 text-right font-mono text-purple-300">
+                  <td className="py-3.5 px-4 text-right font-mono text-xs text-purple-700">
                     <span>{telemetry?.audio_rms.toFixed(0) ?? 20}</span>
                   </td>
 
-                  {/* Battery & Signal */}
-                  <td className="py-3 px-3 text-center font-mono text-[11px] text-slate-400">
+                  {/* Battery Voltage */}
+                  <td className="py-3.5 px-4 text-center font-mono text-xs text-gray-600">
                     <div className="flex items-center justify-center space-x-1">
-                      <Battery className="w-3 h-3 text-emerald-400" />
+                      <Battery className="w-3.5 h-3.5 text-emerald-600" />
                       <span>{node.battery_voltage.toFixed(1)}V</span>
                     </div>
                   </td>
 
                   {/* Action arrow */}
-                  <td className="py-3 px-2 text-right">
+                  <td className="py-3.5 px-2 text-right">
                     <ChevronRight
                       className={`w-4 h-4 transition-transform ${
-                        isSelected ? 'text-cyan-400 translate-x-0.5' : 'text-slate-600'
+                        isSelected ? 'text-blue-600 translate-x-0.5' : 'text-gray-300'
                       }`}
                     />
                   </td>

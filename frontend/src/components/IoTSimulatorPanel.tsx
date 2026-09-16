@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Cpu, Zap, Play, Pause, AlertTriangle, Droplets, Compass, Volume2, ShieldAlert, Sparkles } from 'lucide-react';
+import { Cpu, Zap, Play, Pause, Droplets, Compass, Volume2, Sparkles } from 'lucide-react';
 import { api } from '../services/api';
 import { EmbankmentNode } from '../types';
 
@@ -81,21 +81,21 @@ export const IoTSimulatorPanel: React.FC<IoTSimulatorPanelProps> = ({
   };
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6">
+    <div className="bg-white border border-gray-200/90 rounded-2xl p-6 sm:p-8 shadow-2xs space-y-6">
       
       {/* Panel Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5">
         <div>
-          <div className="flex items-center space-x-2">
-            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          <div className="flex items-center space-x-3">
+            <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
               <Cpu className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+              <h3 className="text-base font-semibold text-gray-900">
                 IoT Edge Telemetry Simulation Laboratory
               </h3>
-              <p className="text-xs text-slate-400">
-                Test ESP32 sensor thresholds, ML regression formulas, and automated SMS/WhatsApp alerts
+              <p className="text-xs text-gray-500 mt-0.5">
+                Stress-test ESP32 sensor thresholds, ML regression formulas, and automated SMS/WhatsApp alerts
               </p>
             </div>
           </div>
@@ -105,10 +105,10 @@ export const IoTSimulatorPanel: React.FC<IoTSimulatorPanelProps> = ({
         <div className="flex items-center space-x-2">
           <button
             onClick={toggleBackgroundSim}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all ${
+            className={`px-4 py-2 rounded-full border text-xs font-medium flex items-center gap-2 transition-all ${
               isSimRunning
-                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                : 'bg-slate-800 text-slate-400 border-slate-700'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : 'bg-gray-100 text-gray-600 border-gray-200'
             }`}
           >
             {isSimRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
@@ -118,90 +118,90 @@ export const IoTSimulatorPanel: React.FC<IoTSimulatorPanelProps> = ({
       </div>
 
       {resultMsg && (
-        <div className="p-3 rounded-xl bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 text-xs font-mono flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
+        <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs font-medium flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
           <span>{resultMsg}</span>
         </div>
       )}
 
-      {/* Preset Scenarios Grid (Phase 6 Test Scenarios) */}
+      {/* Preset Scenarios Grid */}
       <div>
-        <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2.5">
-          1. Quick Scenario Injection (Phase 6 Stress Scenarios)
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-3">
+          1. Quick Scenario Injection (Stress Scenarios)
         </span>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <button
             onClick={() => handleRunPreset('NORMAL')}
-            className={`p-3 rounded-xl border text-left transition-all text-xs cursor-pointer ${
+            className={`p-4 rounded-xl border text-left transition-all text-xs cursor-pointer shadow-2xs ${
               activeScenario === 'NORMAL'
-                ? 'bg-emerald-950/40 border-emerald-500 text-white'
-                : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                ? 'bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-100'
+                : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
             }`}
           >
-            <div className="font-bold text-emerald-400 mb-0.5">Dry Baseline</div>
-            <div className="text-[10px] text-slate-400">Moist: 35%, Tilt: 1°</div>
+            <div className="font-semibold text-emerald-700 mb-1">Dry Baseline</div>
+            <div className="text-xs text-gray-500">Moist: 35%, Tilt: 1°</div>
           </button>
 
           <button
             onClick={() => handleRunPreset('MONSOON_SURGE')}
-            className={`p-3 rounded-xl border text-left transition-all text-xs cursor-pointer ${
+            className={`p-4 rounded-xl border text-left transition-all text-xs cursor-pointer shadow-2xs ${
               activeScenario === 'MONSOON_SURGE'
-                ? 'bg-amber-950/40 border-amber-500 text-white'
-                : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                ? 'bg-amber-50 border-amber-500 text-amber-900 ring-2 ring-amber-100'
+                : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
             }`}
           >
-            <div className="font-bold text-amber-400 mb-0.5">Monsoon Surge</div>
-            <div className="text-[10px] text-slate-400">Moist: 78%, Tilt: 6.5°</div>
+            <div className="font-semibold text-amber-700 mb-1">Monsoon Surge</div>
+            <div className="text-xs text-gray-500">Moist: 78%, Tilt: 6.5°</div>
           </button>
 
           <button
             onClick={() => handleRunPreset('RAPID_TILT')}
-            className={`p-3 rounded-xl border text-left transition-all text-xs cursor-pointer ${
+            className={`p-4 rounded-xl border text-left transition-all text-xs cursor-pointer shadow-2xs ${
               activeScenario === 'RAPID_TILT'
-                ? 'bg-amber-950/40 border-amber-500 text-white'
-                : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                ? 'bg-amber-50 border-amber-500 text-amber-900 ring-2 ring-amber-100'
+                : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
             }`}
           >
-            <div className="font-bold text-amber-400 mb-0.5">Berm Slumping</div>
-            <div className="text-[10px] text-slate-400">Tilt: 18°, Fs &lt; 1.0</div>
+            <div className="font-semibold text-amber-700 mb-1">Berm Slumping</div>
+            <div className="text-xs text-gray-500">Tilt: 18°, Fs &lt; 1.0</div>
           </button>
 
           <button
             onClick={() => handleRunPreset('PIPING_EROSION')}
-            className={`p-3 rounded-xl border text-left transition-all text-xs cursor-pointer ${
+            className={`p-4 rounded-xl border text-left transition-all text-xs cursor-pointer shadow-2xs ${
               activeScenario === 'PIPING_EROSION'
-                ? 'bg-purple-950/40 border-purple-500 text-white'
-                : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                ? 'bg-purple-50 border-purple-500 text-purple-900 ring-2 ring-purple-100'
+                : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
             }`}
           >
-            <div className="font-bold text-purple-400 mb-0.5">Piping Seepage</div>
-            <div className="text-[10px] text-slate-400">Audio RMS: 750 (High)</div>
+            <div className="font-semibold text-purple-700 mb-1">Piping Seepage</div>
+            <div className="text-xs text-gray-500">Audio RMS: 750 (High)</div>
           </button>
 
           <button
             onClick={() => handleRunPreset('FLASH_FLOOD')}
-            className={`p-3 rounded-xl border text-left transition-all text-xs cursor-pointer ${
+            className={`p-4 rounded-xl border text-left transition-all text-xs cursor-pointer shadow-2xs ${
               activeScenario === 'FLASH_FLOOD'
-                ? 'bg-rose-950/40 border-rose-500 text-white critical-pulse-box'
-                : 'bg-slate-950 border-slate-800 text-rose-400 hover:border-rose-700'
+                ? 'bg-rose-50 border-rose-500 text-rose-900 ring-2 ring-rose-100'
+                : 'bg-white border-gray-200 text-gray-700 hover:border-rose-300'
             }`}
           >
-            <div className="font-bold text-rose-400 mb-0.5">💥 Breach Disaster</div>
-            <div className="text-[10px] text-slate-400">Moist: 95%, Tilt: 15°</div>
+            <div className="font-semibold text-rose-700 mb-1">💥 Breach Disaster</div>
+            <div className="text-xs text-gray-500">Moist: 95%, Tilt: 15°</div>
           </button>
         </div>
       </div>
 
       {/* Manual Sensor Parameter Sliders */}
-      <div className="border-t border-slate-800/80 pt-5 space-y-4">
+      <div className="border-t border-gray-100 pt-5 space-y-4">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             2. Custom Sensor Parameter Sliders
           </span>
           <div className="text-xs font-mono">
-            Predicted <b className="text-cyan-400">F<sub>s</sub> = {calculatedFs.toFixed(3)}</b>{' '}
-            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-              calculatedFs < 0.7 ? 'bg-rose-500/20 text-rose-300' : calculatedFs < 1.0 ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'
+            Predicted <b className="text-gray-900">F<sub>s</sub> = {calculatedFs.toFixed(3)}</b>{' '}
+            <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ml-1 ${
+              calculatedFs < 0.7 ? 'bg-rose-50 text-rose-700 border border-rose-200' : calculatedFs < 1.0 ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
             }`}>
               {calculatedFs < 0.7 ? 'CRITICAL FAILURE' : calculatedFs < 1.0 ? 'ALERT WARNING' : 'SAFE'}
             </span>
@@ -210,14 +210,14 @@ export const IoTSimulatorPanel: React.FC<IoTSimulatorPanelProps> = ({
 
         {/* Target Node Selector */}
         <div>
-          <label className="block text-slate-400 text-xs mb-1 font-medium">Target Edge Node</label>
+          <label className="block text-gray-700 text-xs mb-1.5 font-medium">Target Edge Node</label>
           <select
             value={targetNode}
             onChange={(e) => {
               setTargetNode(e.target.value);
               onSelectNode(e.target.value);
             }}
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+            className="w-full bg-white border border-gray-200 rounded-xl p-3 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 shadow-2xs"
           >
             {nodes.map((n) => (
               <option key={n.node_id} value={n.node_id}>
@@ -229,12 +229,12 @@ export const IoTSimulatorPanel: React.FC<IoTSimulatorPanelProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Soil Moisture Slider */}
-          <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
+          <div className="bg-gray-50/70 p-4 rounded-xl border border-gray-200 space-y-2.5">
             <div className="flex justify-between items-center text-xs">
-              <span className="text-slate-400 flex items-center gap-1">
-                <Droplets className="w-3.5 h-3.5 text-sky-400" /> Soil Moisture
+              <span className="text-gray-700 font-medium flex items-center gap-1.5">
+                <Droplets className="w-3.5 h-3.5 text-sky-600" /> Soil Moisture
               </span>
-              <span className="font-mono font-bold text-sky-400">{moisture.toFixed(1)}%</span>
+              <span className="font-mono font-bold text-sky-700">{moisture.toFixed(1)}%</span>
             </div>
             <input
               type="range"
@@ -243,21 +243,21 @@ export const IoTSimulatorPanel: React.FC<IoTSimulatorPanelProps> = ({
               step="0.5"
               value={moisture}
               onChange={(e) => setMoisture(parseFloat(e.target.value))}
-              className="w-full accent-sky-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
+              className="w-full accent-blue-600 h-2 bg-gray-200 rounded-lg cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+            <div className="flex justify-between text-[11px] text-gray-400 font-mono">
               <span>0% (Dry)</span>
               <span>100% (Submerged)</span>
             </div>
           </div>
 
           {/* Tilt Slider */}
-          <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
+          <div className="bg-gray-50/70 p-4 rounded-xl border border-gray-200 space-y-2.5">
             <div className="flex justify-between items-center text-xs">
-              <span className="text-slate-400 flex items-center gap-1">
-                <Compass className="w-3.5 h-3.5 text-amber-400" /> Structural Tilt
+              <span className="text-gray-700 font-medium flex items-center gap-1.5">
+                <Compass className="w-3.5 h-3.5 text-amber-600" /> Structural Tilt
               </span>
-              <span className="font-mono font-bold text-amber-400">{tilt.toFixed(1)}°</span>
+              <span className="font-mono font-bold text-amber-700">{tilt.toFixed(1)}°</span>
             </div>
             <input
               type="range"
@@ -266,21 +266,21 @@ export const IoTSimulatorPanel: React.FC<IoTSimulatorPanelProps> = ({
               step="0.5"
               value={tilt}
               onChange={(e) => setTilt(parseFloat(e.target.value))}
-              className="w-full accent-amber-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
+              className="w-full accent-amber-500 h-2 bg-gray-200 rounded-lg cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+            <div className="flex justify-between text-[11px] text-gray-400 font-mono">
               <span>0° (Vertical)</span>
               <span>45° (Slump Failure)</span>
             </div>
           </div>
 
           {/* Audio RMS Slider */}
-          <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
+          <div className="bg-gray-50/70 p-4 rounded-xl border border-gray-200 space-y-2.5">
             <div className="flex justify-between items-center text-xs">
-              <span className="text-slate-400 flex items-center gap-1">
-                <Volume2 className="w-3.5 h-3.5 text-purple-400" /> Acoustic Piping
+              <span className="text-gray-700 font-medium flex items-center gap-1.5">
+                <Volume2 className="w-3.5 h-3.5 text-purple-600" /> Acoustic Piping
               </span>
-              <span className="font-mono font-bold text-purple-400">{audio.toFixed(0)} RMS</span>
+              <span className="font-mono font-bold text-purple-700">{audio.toFixed(0)} RMS</span>
             </div>
             <input
               type="range"
@@ -289,9 +289,9 @@ export const IoTSimulatorPanel: React.FC<IoTSimulatorPanelProps> = ({
               step="10"
               value={audio}
               onChange={(e) => setAudio(parseFloat(e.target.value))}
-              className="w-full accent-purple-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
+              className="w-full accent-purple-600 h-2 bg-gray-200 rounded-lg cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+            <div className="flex justify-between text-[11px] text-gray-400 font-mono">
               <span>0 (Silent)</span>
               <span>1000 (Violent Seepage)</span>
             </div>
@@ -302,7 +302,7 @@ export const IoTSimulatorPanel: React.FC<IoTSimulatorPanelProps> = ({
         <button
           onClick={handleManualIngest}
           disabled={loading}
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs transition-all flex items-center justify-center space-x-2 shadow-lg shadow-cyan-500/20 cursor-pointer"
+          className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all flex items-center justify-center space-x-2 shadow-sm cursor-pointer"
         >
           <Zap className="w-4 h-4" />
           <span>{loading ? 'Ingesting via HTTP...' : `Ingest Telemetry Packet -> ${targetNode}`}</span>

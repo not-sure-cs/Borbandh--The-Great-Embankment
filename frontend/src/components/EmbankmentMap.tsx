@@ -458,7 +458,7 @@ export const EmbankmentMap: React.FC<EmbankmentMapProps> = ({
   ]);
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-2xl relative flex flex-col h-[650px]">
+    <div className="w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-2xl relative flex flex-col h-[650px]">
       
       {/* Top Header: Title & Basemap Selector */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-800/80 pb-4 mb-3">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Radio, Landmark } from 'lucide-react';
+import { Landmark, Radio } from 'lucide-react';
 
 interface CivicTopBarProps {
   connected: boolean;
@@ -27,40 +27,40 @@ export const CivicTopBar: React.FC<CivicTopBarProps> = ({ connected }) => {
   }, []);
 
   return (
-    <div className="w-full bg-slate-950 border-b border-slate-800 text-slate-400 text-[11px] font-mono tracking-tight select-none">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5 flex flex-wrap items-center justify-between gap-2">
+    <div className="w-full bg-[#f1f3f4] border-b border-gray-200 text-[#3c4043] text-xs font-sans select-none">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-wrap items-center justify-between gap-3">
         {/* Left: Official Authority Emblem & Tag */}
-        <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-1.5 text-slate-300 font-semibold uppercase tracking-wider text-[10px]">
-            <Landmark className="w-3.5 h-3.5 text-cyan-400" />
+        <div className="flex items-center space-x-2.5">
+          <div className="flex items-center space-x-2 text-[#202124] font-medium text-xs">
+            <Landmark className="w-4 h-4 text-blue-600" />
             <span>Govt. of Assam • Water Resources Department</span>
           </div>
-          <span className="text-slate-600 hidden sm:inline">|</span>
-          <span className="text-slate-400 hidden md:inline text-[10px]">
+          <span className="text-gray-300 hidden sm:inline">|</span>
+          <span className="text-gray-600 hidden md:inline text-xs">
             Central Water Commission (CWC) &amp; ISRO-Bhuvan Telemetry Link
           </span>
         </div>
 
-        {/* Right: Real-time Telemetry Status & Clock */}
-        <div className="flex items-center space-x-3 text-[11px]">
+        {/* Right: Live Stream & Precision Clock */}
+        <div className="flex items-center space-x-4 text-xs">
           {/* Live Stream Indicator */}
-          <div className="flex items-center space-x-1.5 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded text-[10px]">
+          <div className="flex items-center space-x-2 bg-white border border-gray-200 px-3 py-1 rounded-full shadow-2xs">
             <span
-              className={`w-2 h-2 rounded-full transition-all ${
+              className={`w-2.5 h-2.5 rounded-full transition-all ${
                 connected
-                  ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]'
-                  : 'bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse'
+                  ? 'bg-[#1e8e3e] shadow-[0_0_6px_rgba(30,142,62,0.6)]'
+                  : 'bg-[#d93025] animate-pulse'
               }`}
             />
-            <span className={connected ? 'text-emerald-400 font-semibold' : 'text-rose-400 font-semibold'}>
+            <span className={connected ? 'text-[#137333] font-medium' : 'text-[#c5221f] font-medium'}>
               {connected ? 'LIVE STREAM' : 'RECONNECTING'}
             </span>
           </div>
 
           {/* Precision Clock */}
-          <div className="hidden xs:flex items-center space-x-1 text-slate-300 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded text-[10px]">
-            <span className="text-slate-500">TIME:</span>
-            <span className="font-semibold text-slate-200">{timeStr || 'SYNCING...'}</span>
+          <div className="hidden xs:flex items-center space-x-1.5 text-gray-700 bg-white border border-gray-200 px-3 py-1 rounded-full shadow-2xs font-mono text-xs">
+            <span className="text-gray-400 font-sans text-[11px]">TIME:</span>
+            <span className="font-semibold">{timeStr || 'SYNCING...'}</span>
           </div>
         </div>
       </div>

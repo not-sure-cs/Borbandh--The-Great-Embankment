@@ -169,7 +169,6 @@ export const App: React.FC = () => {
     });
   }, [nodes, filters]);
 
-  // Keep selected node valid
   const selectedNode = useMemo(() => {
     const found = nodes.find((n) => n.node_id === selectedNodeId);
     return found ?? nodes[0] ?? null;
@@ -180,9 +179,9 @@ export const App: React.FC = () => {
   }, [nodes]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-cyan-500 selection:text-slate-950 font-sans">
+    <div className="min-h-screen bg-[#f8f9fa] text-[#202124] flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
       
-      {/* Platform Header with Civic Top Bar */}
+      {/* Google Earth Engine Style Header */}
       <Header
         stats={stats}
         connected={connected}
@@ -198,20 +197,20 @@ export const App: React.FC = () => {
         activeCriticalTelemetry={activeCriticalTelemetry}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      {/* Main Content Area - Generous Spacing & Decluttered Layout */}
+      <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         
         {/* Tab 1: Overview & Geotechnical Station Triage (Split-View) */}
         {activeTab === 'dashboard' && (
-          <div className="space-y-6">
-            {/* 1. Metrics & Summary KPI Row */}
+          <div className="space-y-8">
+            {/* 1. Spacious Metrics & Summary KPI Row */}
             <MetricsSummaryRow
               stats={stats}
               nodes={nodes}
               totalAlertsCount={alerts.length}
             />
 
-            {/* 2. Station Filter & Search Control Bar */}
+            {/* 2. Roomy Station Filter & Search Control Bar */}
             <StationFilterBar
               ref={searchInputRef}
               filters={filters}
@@ -220,10 +219,10 @@ export const App: React.FC = () => {
               totalCount={nodes.length}
             />
 
-            {/* 3. Split-View Station Triage Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* 3. Split-View Station Triage Layout with Ample Breathing Room */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* Left Column (5 cols): High-Density Telemetry Table & Trend Chart */}
-              <div className="lg:col-span-6 xl:col-span-5 space-y-6">
+              <div className="lg:col-span-6 xl:col-span-5 space-y-8">
                 <StationTableView
                   nodes={filteredNodes}
                   selectedNodeId={selectedNodeId}
@@ -236,19 +235,12 @@ export const App: React.FC = () => {
                 />
               </div>
 
-              {/* Right Column (7 cols): Deep Diagnostic Inspector & GIS Reach Preview */}
-              <div className="lg:col-span-6 xl:col-span-7 space-y-6">
+              {/* Right Column (7 cols): Deep Diagnostic Inspector */}
+              <div className="lg:col-span-6 xl:col-span-7 space-y-8">
                 <StationInspector
                   node={selectedNode}
                   alerts={alerts}
                   onOpenSimModal={() => setShowSimModal(true)}
-                />
-
-                <EmbankmentMap
-                  nodes={nodes}
-                  geoData={geoData}
-                  selectedNodeId={selectedNodeId}
-                  onSelectNode={setSelectedNodeId}
                 />
               </div>
             </div>
@@ -257,7 +249,7 @@ export const App: React.FC = () => {
 
         {/* Tab 2: Full GIS Geospatial Map & Satellites */}
         {activeTab === 'map' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             <EmbankmentMap
               nodes={nodes}
               geoData={geoData}
@@ -275,7 +267,7 @@ export const App: React.FC = () => {
 
         {/* Tab 3: IoT Edge Telemetry Simulation Lab */}
         {activeTab === 'simulator' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             <IoTSimulatorPanel
               nodes={nodes}
               selectedNodeId={selectedNodeId}
@@ -292,21 +284,21 @@ export const App: React.FC = () => {
           role="dialog"
           aria-modal="true"
           aria-label="IoT Simulation Laboratory"
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4"
         >
-          <div className="max-w-4xl w-full max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl">
-            <div className="flex justify-between items-center p-3 border-b border-slate-800 bg-slate-950/60">
-              <span className="text-xs font-mono font-bold text-slate-300">
-                EDGE SIMULATION LAB MODAL
+          <div className="max-w-4xl w-full max-h-[90vh] overflow-y-auto rounded-3xl border border-gray-200 bg-white shadow-2xl">
+            <div className="flex justify-between items-center p-4 border-b border-gray-100">
+              <span className="text-sm font-semibold text-gray-900">
+                IoT Edge Telemetry Simulation Lab
               </span>
               <button
                 onClick={() => setShowSimModal(false)}
-                className="bg-slate-800 text-slate-300 hover:text-white px-2.5 py-1 rounded-lg text-xs font-mono font-bold"
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
               >
                 Close [✕]
               </button>
             </div>
-            <div className="p-4">
+            <div className="p-6">
               <IoTSimulatorPanel
                 nodes={nodes}
                 selectedNodeId={selectedNodeId}
@@ -318,11 +310,23 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      {/* Utilitarian Civic Footer */}
-      <footer className="border-t border-slate-800 bg-slate-950 py-6 text-center text-xs text-slate-500 font-mono">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>Govt. of Assam • Water Resources Department | BorBandh AI Defense Network</span>
-          <span>CWC Hydrological Sync • Sentinel-1 SAR Backscatter • 100% Go Backend</span>
+      {/* Google Earth Engine Style Footer */}
+      <footer className="border-t border-gray-200 bg-white py-8 text-center text-xs text-gray-500 font-sans mt-12">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center space-x-2">
+            <span className="font-medium text-gray-700">BorBandh AI</span>
+            <span>•</span>
+            <span>Govt. of Assam • Water Resources Department</span>
+          </div>
+          <div className="flex items-center space-x-4 text-xs text-gray-500">
+            <a href="https://earthengine.google.com/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">
+              Google Earth Engine Ingestion
+            </a>
+            <span>•</span>
+            <span>ISRO Bhuvan GIS Link</span>
+            <span>•</span>
+            <span>CWC Hydraulic Sensors</span>
+          </div>
         </div>
       </footer>
     </div>
