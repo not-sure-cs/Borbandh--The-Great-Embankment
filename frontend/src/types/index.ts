@@ -131,7 +131,7 @@ export interface GeoFeature {
     reach_id?: string;
     river?: string;
     district?: string;
-    type: 'embankment_line' | 'buffer_zone' | 'breach_location' | 'inundation_zone' | 'hand_depression';
+    type: 'embankment_line' | 'buffer_zone' | 'breach_location' | 'inundation_zone' | 'hand_depression' | 'sar_saturation_zone';
     length_km?: number;
     crest_elevation?: number;
     vulnerable?: boolean;
@@ -157,6 +157,9 @@ export interface GeoFeature {
     depth_m?: number;
     hand_m?: number;
     risk_rating?: string;
+    soil_moisture_pct?: number;
+    sar_sigma0_db?: number;
+    saturation_tier?: string;
   };
   geometry: {
     type: 'LineString' | 'Polygon' | 'Point';

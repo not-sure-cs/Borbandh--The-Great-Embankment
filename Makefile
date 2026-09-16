@@ -37,10 +37,10 @@ sqlc-gen:
 	cd backend && sqlc generate
 
 migrate-up:
-	goose -dir backend/migrations postgres "5457{DATABASE_URL:-postgres://borbandh_app:borbandh_secure_password@localhost:5432/borbandh?sslmode=disable}" up
+	goose -dir backend/migrations postgres "$${DATABASE_URL:-postgres://borbandh_app:borbandh_secure_password@localhost:5433/borbandh_telemetry?sslmode=disable}" up
 
 migrate-down:
-	goose -dir backend/migrations postgres "5457{DATABASE_URL:-postgres://borbandh_app:borbandh_secure_password@localhost:5432/borbandh?sslmode=disable}" down
+	goose -dir backend/migrations postgres "$${DATABASE_URL:-postgres://borbandh_app:borbandh_secure_password@localhost:5433/borbandh_telemetry?sslmode=disable}" down
 
 docker-up:
 	docker compose up -d

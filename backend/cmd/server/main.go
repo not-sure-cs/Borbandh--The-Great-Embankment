@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/joho/godotenv"
+
 	"borbandh/backend/internal/alerting"
 	"borbandh/backend/internal/cache"
 	"borbandh/backend/internal/handlers"
@@ -21,6 +23,18 @@ import (
 )
 
 func main() {
+	// Load environment configuration from .env file
+	if err := godotenv.Load(); err != nil {
+		// Fallback: If launched from backend/ subdirectory, load from parent directory
+		if errParent := godotenv.Load("../.env"); errParent == nil {
+			log.Println("[ENV] Successfully loaded environment configuration from ../.env")
+		} else {
+			log.Println("[ENV] Notice: No .env file found in working directory or parent. Using system environment.")
+		}
+	} else {
+		log.Println("[ENV] Successfully loaded environment configuration from .env")
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -31,9 +45,15 @@ func main() {
 	log.Println("   Architecture: PostGIS + TimescaleDB + Redis 7 Pub/Sub")
 	log.Println("==================================================================")
 
-	// 1. Initialize Persistent Store (Dual-Mode: PostgresStore if DATABASE_URL is set, else MemoryStore)
+	// 1. Initialize Persistent Store (Dual-Mode: PostgresStore if DATABASE_URL/TIMESCALE_URL is set, else MemoryStore)
 	var st store.Store
 	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		dbURL = os.Getenv("TIMESCALE_URL")
+	}
+	if dbURL == "" {
+		dbURL = os.Getenv("POSTGRES_URL")
+	}
 	if dbURL != "" {
 		pgStore, err := store.NewPostgresStore(context.Background(), dbURL)
 		if err != nil {

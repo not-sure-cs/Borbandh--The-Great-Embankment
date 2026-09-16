@@ -378,24 +378,55 @@ export const EmbankmentMap: React.FC<EmbankmentMapProps> = ({
       });
     }
 
-    // 5. Sentinel-1 SAR Ground Saturation Overlay
-    if (showSARLayer) {
-      nodes.forEach((node) => {
-        const moist = node.last_telemetry?.soil_moisture ?? 35;
-        const radiusMeters = 6000 + moist * 80;
-        const color = moist > 70 ? '#ef4444' : moist > 50 ? '#f59e0b' : '#0284c7';
+    // 5. Sentinel-1 SAR Ground Saturation Overlay (Topography-Conformed)
+    if (showSARLayer && activeGeoData && activeGeoData.features) {
+      let foundSARFeatures = false;
+      activeGeoData.features.forEach((feature) => {
+        if (feature.properties.type === 'sar_saturation_zone') {
+          foundSARFeatures = true;
+          const polyCoords = (feature.geometry.coordinates[0] as [number, number][]).map(
+            ([lng, lat]) => [lat, lng] as [number, number]
+          );
 
-        const circle = L.circle([node.latitude, node.longitude], {
-          radius: radiusMeters,
-          color: color,
-          weight: 1,
-          dashArray: '2 2',
-          fillColor: color,
-          fillOpacity: 0.12,
-        });
-        circle.bindTooltip(`<b>Sentinel-1 SAR Radar</b><br/>Ground Saturation: ${moist.toFixed(1)}%`, { sticky: true });
-        group.addLayer(circle);
+          const moist = feature.properties.soil_moisture_pct ?? 48;
+          const color = feature.properties.fillColor ?? '#0284c7';
+          const sigma0 = feature.properties.sar_sigma0_db ?? -14.2;
+
+          const polygon = L.polygon(polyCoords, {
+            color: color,
+            weight: 1.5,
+            dashArray: '3 3',
+            fillColor: color,
+            fillOpacity: 0.28,
+          });
+
+          polygon.bindTooltip(
+            `<b>Sentinel-1 SAR Riparian Saturation</b><br/>Backscatter σ°: <b>${sigma0.toFixed(1)} dB</b><br/>Soil Moisture: <b>${moist.toFixed(1)}%</b>`,
+            { sticky: true }
+          );
+          group.addLayer(polygon);
+        }
       });
+
+      // Fallback only if no server-provided SAR polygons are available
+      if (!foundSARFeatures) {
+        nodes.forEach((node) => {
+          const moist = node.last_telemetry?.soil_moisture ?? 35;
+          const radiusMeters = 2500 + moist * 40;
+          const color = moist > 70 ? '#ef4444' : moist > 50 ? '#f59e0b' : '#0284c7';
+
+          const circle = L.circle([node.latitude, node.longitude], {
+            radius: radiusMeters,
+            color: color,
+            weight: 1,
+            dashArray: '2 2',
+            fillColor: color,
+            fillOpacity: 0.15,
+          });
+          circle.bindTooltip(`<b>Sentinel-1 SAR Radar</b><br/>Ground Saturation: ${moist.toFixed(1)}%`, { sticky: true });
+          group.addLayer(circle);
+        });
+      }
     }
 
     // 6. Active IoT Node Telemetry Pins

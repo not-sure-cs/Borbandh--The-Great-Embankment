@@ -1,15 +1,61 @@
-#text files
-.txt
-
-#images
-.jpg
-
-# Environment files
+# ==============================================================================
+# Environment Configuration Files
+# ==============================================================================
 .env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
 
-# Binaries
+# ==============================================================================
+# Node & Frontend Build Artifacts
+# ==============================================================================
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ==============================================================================
+# Go Binaries & Test Artifacts
+# ==============================================================================
 main
 *.exe
 *.test
+*.out
+backend/bin/
+bin/
 
-backend/bin
+# ==============================================================================
+# Databases & Docker Volume Mounts
+# ==============================================================================
+pgdata/
+timescaledata/
+redisdata/
+grafanadata/
+
+# ==============================================================================
+# Operating System & Editor Metadata
+# ==============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ==============================================================================
+# Temporary Scratch & Log Files
+# ==============================================================================
+*.log
+scratch/

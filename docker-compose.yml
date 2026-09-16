@@ -1,21 +1,37 @@
-version: '3.8'
-
 services:
-  db:
-    image: timescale/timescaledb-ha:pg16-postgis
-    container_name: borbandh-db
+  # 1. Core Relational PostgreSQL Database with PostGIS
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: borbandh-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: borbandh
+      POSTGRES_DB: borbandh_relational
       POSTGRES_USER: borbandh_app
       POSTGRES_PASSWORD: borbandh_secure_password
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./backend/migrations/init_docker.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
+  # 2. TimescaleDB Time-Series & Hypsometry Database with PostGIS
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: borbandh-timescale
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: borbandh_telemetry
+      POSTGRES_USER: borbandh_app
+      POSTGRES_PASSWORD: borbandh_secure_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - timescaledata:/var/lib/postgresql/data
+      - ./backend/migrations/init_docker.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  # 3. Redis Distributed In-Memory Cache & Pub/Sub
   redis:
-    image: redis:7-alpine
+    image: redis:7
     container_name: borbandh-redis
     restart: unless-stopped
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
@@ -24,6 +40,7 @@ services:
     volumes:
       - redisdata:/data
 
+  # 4. BorBandh Vanilla Go Backend Server
   backend:
     build:
       context: .
@@ -31,15 +48,42 @@ services:
     container_name: borbandh-backend
     restart: unless-stopped
     depends_on:
-      - db
+      - postgres
+      - timescaledb
       - redis
     environment:
-      DATABASE_URL: "postgres://borbandh_app:borbandh_secure_password@db:5432/borbandh?sslmode=disable"
+      POSTGRES_URL: "postgres://borbandh_app:borbandh_secure_password@postgres:5432/borbandh_relational?sslmode=disable"
+      TIMESCALE_URL: "postgres://borbandh_app:borbandh_secure_password@timescaledb:5432/borbandh_telemetry?sslmode=disable"
+      DATABASE_URL: "postgres://borbandh_app:borbandh_secure_password@timescaledb:5432/borbandh_telemetry?sslmode=disable"
       REDIS_URL: "redis://redis:6379/0"
       PORT: "8080"
     ports:
       - "8080:8080"
 
+  # 5. Grafana Kiosk Analytics & Visual Dashboard Engine
+  grafana:
+    image: grafana/grafana:latest
+    container_name: borbandh-grafana
+    restart: unless-stopped
+    depends_on:
+      - timescaledb
+    environment:
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_SECURITY_COOKIE_SAMESITE=none
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_USERS_DEFAULT_THEME=light
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - grafanadata:/var/lib/grafana
+
 volumes:
   pgdata:
+  timescaledata:
   redisdata:
+  grafanadata:

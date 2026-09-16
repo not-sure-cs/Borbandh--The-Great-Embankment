@@ -105,7 +105,7 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <Activity className="w-4 h-4" />
-            <span>Overview &amp; Triage</span>
+            <span>Grafana Dashboard</span>
           </button>
 
           <button
@@ -117,7 +117,7 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <MapPin className="w-4 h-4" />
-            <span>GIS Map &amp; Satellites</span>
+            <span>Topographic GIS Map</span>
           </button>
 
           <button
