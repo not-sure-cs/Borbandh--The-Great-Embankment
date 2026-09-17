@@ -131,8 +131,32 @@ func (s *Simulator) tickNode(nodeID string, mode string) {
 		audio = 15.0 + rand.Float64()*20.0
 	}
 
-	fs := calculator.CalculateFactorOfSafety(moist, tilt, audio)
-	status := calculator.EvaluateStatus(fs)
+	// Environmental macro conditions tailored to simulation mode
+	var rain, ndwi, sar float64
+	switch mode {
+	case "FLASH_FLOOD", "CRITICAL_BREACH":
+		rain = 68.0 + rand.Float64()*25.0
+		ndwi = 0.55 + rand.Float64()*0.15
+		sar = -21.0 - rand.Float64()*3.0 // low dB = specular water reflection / submergence
+	case "MONSOON_SURGE":
+		rain = 35.0 + rand.Float64()*15.0
+		ndwi = 0.45 + rand.Float64()*0.10
+		sar = -18.0 - rand.Float64()*2.0
+	case "RAPID_TILT":
+		rain = 12.0 + rand.Float64()*8.0
+		ndwi = 0.34 + rand.Float64()*0.05
+		sar = -14.5 - rand.Float64()*1.5
+	case "PIPING_EROSION":
+		rain = 20.0 + rand.Float64()*10.0
+		ndwi = 0.40 + rand.Float64()*0.08
+		sar = -17.0 - rand.Float64()*2.0
+	default: // NORMAL
+		rain = 1.0 + rand.Float64()*2.5
+		ndwi = 0.30 + rand.Float64()*0.04
+		sar = -13.2 + (rand.Float64()-0.5)*0.8
+	}
+
+	mlRes, _ := calculator.PredictNodeSafety(nodeID, moist, tilt, audio, rain, ndwi, sar)
 
 	telemetry := models.NodeTelemetry{
 		ID:             fmt.Sprintf("TEL-%d-%s", time.Now().UnixNano(), nodeID),
@@ -141,8 +165,12 @@ func (s *Simulator) tickNode(nodeID string, mode string) {
 		SoilMoisture:   moist,
 		TiltAngle:      tilt,
 		AudioRMS:       audio,
-		FactorOfSafety: fs,
-		Status:         status,
+		FactorOfSafety: mlRes.FactorOfSafety,
+		ForecastFS:     mlRes.ForecastFS,
+		PBreach:        mlRes.PBreach,
+		FailureMode:    mlRes.FailureMode,
+		FeatureWeights: mlRes.FeatureWeights,
+		Status:         mlRes.Status,
 		CreatedAt:      time.Now(),
 	}
 
@@ -161,8 +189,12 @@ func (s *Simulator) tickNode(nodeID string, mode string) {
 
 // IngestManual processes a single incoming payload from an ESP32 or manual API call.
 func (s *Simulator) IngestManual(payload models.TelemetryIngestPayload) models.NodeTelemetry {
-	fs := calculator.CalculateFactorOfSafety(payload.SoilMoisture, payload.TiltAngle, payload.AudioRMS)
-	status := calculator.EvaluateStatus(fs)
+	// Use regional default macro indices when ingesting standalone IoT packets
+	rain := 1.075
+	ndwi := 0.3212
+	sar := -13.33
+
+	mlRes, _ := calculator.PredictNodeSafety(payload.NodeID, payload.SoilMoisture, payload.TiltAngle, payload.AudioRMS, rain, ndwi, sar)
 
 	zone := payload.ZoneName
 	if zone == "" {
@@ -180,8 +212,12 @@ func (s *Simulator) IngestManual(payload models.TelemetryIngestPayload) models.N
 		SoilMoisture:   payload.SoilMoisture,
 		TiltAngle:      payload.TiltAngle,
 		AudioRMS:       payload.AudioRMS,
-		FactorOfSafety: fs,
-		Status:         status,
+		FactorOfSafety: mlRes.FactorOfSafety,
+		ForecastFS:     mlRes.ForecastFS,
+		PBreach:        mlRes.PBreach,
+		FailureMode:    mlRes.FailureMode,
+		FeatureWeights: mlRes.FeatureWeights,
+		Status:         mlRes.Status,
 		CreatedAt:      time.Now(),
 	}
 

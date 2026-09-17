@@ -14,9 +14,11 @@ import (
 
 	"borbandh/backend/internal/alerting"
 	"borbandh/backend/internal/cache"
+	"borbandh/backend/internal/calculator"
 	"borbandh/backend/internal/handlers"
 	"borbandh/backend/internal/ingestion"
 	"borbandh/backend/internal/middleware"
+	"borbandh/backend/internal/ml"
 	"borbandh/backend/internal/simulator"
 	"borbandh/backend/internal/sse"
 	"borbandh/backend/internal/store"
@@ -86,17 +88,35 @@ func main() {
 		})
 	}
 
-	// 5. Initialize Data Ingestion Engine & Outbound API Data Collector
+	// 5. Initialize Native Pure-Go Machine Learning Subsystem (TFT-PINN + RobustScaler)
+	// Zero Python runtime dependency: checkpoint loaded directly via Go archive/zip
+	pthPath, err := ml.FindModelFile(os.Getenv("MODEL_PTH_PATH"))
+	var activeMLEngine *ml.InferenceEngine
+	if err != nil {
+		log.Printf("[ML NOTICE] Model file best_tft_pinn_embankment.pth not found (%v). Using physics fallback.", err)
+	} else {
+		model, err := ml.LoadWeightsFromPTH(pthPath)
+		if err != nil {
+			log.Printf("[ML ERROR] Failed to load TFT-PINN weights from %s (%v). Using physics fallback.", pthPath, err)
+		} else {
+			scaler := ml.NewEmbankmentRobustScaler()
+			activeMLEngine = ml.NewInferenceEngine(model, scaler)
+			calculator.SetMLEngine(activeMLEngine)
+			log.Printf("[ML ENGINE] Successfully initialized TFT-PINN embankment model from %s (98 tensors loaded, zero Python dependency).", pthPath)
+		}
+	}
+
+	// 6. Initialize Data Ingestion Engine & Outbound API Data Collector
 	ingestEngine := ingestion.NewIngestionEngine(st)
 	collector := ingestion.NewDataCollector(ingestEngine, st)
 	collector.Start(context.Background())
 
-	// 6. Initialize Background IoT Telemetry Simulator
+	// 7. Initialize Background IoT Telemetry Simulator
 	sim := simulator.NewSimulator(st, disp, broker)
 	sim.Start()
 
-	// 7. Initialize Handlers and Register Routes on Standard http.ServeMux
-	apiHandler := handlers.NewAPIHandler(st, broker, sim)
+	// 8. Initialize Handlers and Register Routes on Standard http.ServeMux
+	apiHandler := handlers.NewAPIHandler(st, broker, sim, activeMLEngine)
 	mux := http.NewServeMux()
 	apiHandler.RegisterRoutes(mux)
 

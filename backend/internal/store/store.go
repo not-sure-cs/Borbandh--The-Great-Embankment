@@ -386,8 +386,7 @@ func (s *MemoryStore) seedInitialTelemetry() {
 				audio += 40.0
 			}
 
-			fs := calculator.CalculateFactorOfSafety(moist, tilt, audio)
-			status := calculator.EvaluateStatus(fs)
+			mlRes, _ := calculator.PredictNodeSafety(nodeID, moist, tilt, audio, 2.5, 0.32, -13.3)
 
 			entry := models.NodeTelemetry{
 				ID:             fmt.Sprintf("TEL-%d-%s", t.UnixNano(), nodeID),
@@ -396,8 +395,12 @@ func (s *MemoryStore) seedInitialTelemetry() {
 				SoilMoisture:   moist,
 				TiltAngle:      tilt,
 				AudioRMS:       audio,
-				FactorOfSafety: fs,
-				Status:         status,
+				FactorOfSafety: mlRes.FactorOfSafety,
+				ForecastFS:     mlRes.ForecastFS,
+				PBreach:        mlRes.PBreach,
+				FailureMode:    mlRes.FailureMode,
+				FeatureWeights: mlRes.FeatureWeights,
+				Status:         mlRes.Status,
 				CreatedAt:      t,
 			}
 

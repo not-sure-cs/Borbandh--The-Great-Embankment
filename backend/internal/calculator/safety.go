@@ -2,6 +2,9 @@ package calculator
 
 import (
 	"math"
+	"sync"
+
+	"borbandh/backend/internal/ml"
 )
 
 const (
@@ -9,7 +12,62 @@ const (
 	ThresholdCritical = 0.7
 )
 
-// CalculateFactorOfSafety implements the machine learning regression equation:
+var (
+	mlMu      sync.RWMutex
+	mlEngine  *ml.InferenceEngine
+)
+
+// SetMLEngine injects the active pure-Go TFT-PINN inference engine into the calculator.
+func SetMLEngine(engine *ml.InferenceEngine) {
+	mlMu.Lock()
+	defer mlMu.Unlock()
+	mlEngine = engine
+}
+
+// GetMLEngine returns the configured ML inference engine, if available.
+func GetMLEngine() *ml.InferenceEngine {
+	mlMu.RLock()
+	defer mlMu.RUnlock()
+	return mlEngine
+}
+
+// PredictNodeSafety performs full 6-channel ML inference combining IoT telemetry and macro variables.
+func PredictNodeSafety(nodeID string, moisture, tilt, audio, rainMM, ndwi, sarBackscatter float64) (*ml.PredictionResult, error) {
+	engine := GetMLEngine()
+	if engine == nil {
+		// Fallback to baseline calculation
+		fs := CalculateFactorOfSafety(moisture, tilt, audio)
+		stat := EvaluateStatus(fs)
+		var pBreach float64
+		if fs >= 1.0 {
+			pBreach = 0.05
+		} else if fs >= 0.7 {
+			pBreach = 0.45
+		} else {
+			pBreach = 0.88
+		}
+		return &ml.PredictionResult{
+			FactorOfSafety: fs,
+			ForecastFS:     []float64{fs},
+			Status:         stat,
+			PBreach:        pBreach,
+			FailureMode:    "Heuristic Fallback",
+			FeatureWeights: map[string]float64{
+				"moisture": 0.4,
+				"tilt":     0.4,
+				"acoustic": 0.2,
+			},
+		}, nil
+	}
+
+	features := []float64{moisture, tilt, audio, rainMM, ndwi, sarBackscatter}
+	if nodeID != "" {
+		return engine.Predict(nodeID, features)
+	}
+	return engine.PredictSingle(features)
+}
+
+// CalculateFactorOfSafety implements the baseline regression equation:
 // Fs = 2.0 - (0.012 * Moisture) - (0.04 * Tilt) - (0.001 * Audio)
 func CalculateFactorOfSafety(moisturePercent, tiltDegrees, audioRMS float64) float64 {
 	// Clamp sensor input ranges to physical limits

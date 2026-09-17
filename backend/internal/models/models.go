@@ -12,9 +12,13 @@ type NodeTelemetry struct {
 	SoilMoisture   float64   `json:"soil_moisture"`   // 0 - 100%
 	TiltAngle      float64   `json:"tilt_angle"`      // 0 - 90 degrees
 	AudioRMS       float64   `json:"audio_rms"`        // 0 - 1000 RMS vibration
-	FactorOfSafety float64   `json:"factor_of_safety"` // ML regression calculated Fs
-	Status         string    `json:"status"`           // SAFE, WARNING, CRITICAL
-	CreatedAt      time.Time `json:"created_at"`
+	FactorOfSafety float64            `json:"factor_of_safety"`          // ML regression / PINN calculated Fs
+	ForecastFS     []float64          `json:"forecast_fs,omitempty"`     // 24-step multi-horizon forecast (t+1..t+24)
+	PBreach        float64            `json:"p_breach,omitempty"`        // Calibrated failure probability [0.0 - 1.0]
+	FailureMode    string             `json:"failure_mode,omitempty"`    // Dominant physical failure mechanism
+	FeatureWeights map[string]float64 `json:"feature_weights,omitempty"` // VSN explainability importance weights
+	Status         string             `json:"status"`                    // SAFE, WARNING, CRITICAL
+	CreatedAt      time.Time          `json:"created_at"`
 }
 
 // TelemetryIngestPayload is the incoming payload from ESP32 / ESPHome webhook or simulator.
